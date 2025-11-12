@@ -1,2 +1,5 @@
 project(Projet-Prog-CIR2-Sem1)
 add_subdirectory(Projet)
+if(MSVC)
+    set(SFML_DIR "C:\Program Files\SFML\SFML_3.0.2\lib\cmake\SFML")
+endif(MSVC)
