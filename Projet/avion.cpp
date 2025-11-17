@@ -28,8 +28,27 @@ void Avion::setEtat(EtatAvion e) {
     etat_ = e;
 }
 
-void Avion::avancer(float temps) {
-    if (trajectoire_.empty()) {
+void Avion::avancer(float dt) {
+    if (trajectoire_.empty())
+        return;
+    Position cible = trajectoire_.front();
+    float dx = cible.getX() - pos_.getX();
+    float dy = cible.getY() - pos_.getY();
+    float dz = cible.getAltitude() - pos_.getAltitude();
+    float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+    if (dist < 1.0f) {
+        trajectoire_.erase(trajectoire_.begin());
         return;
     }
+
+    float nx = dx / dist;
+    float ny = dy / dist;
+    float nz = dz / dist;
+    pos_.setPosition(
+        pos_.getX() + nx * vitesse_ * dt,
+        pos_.getY() + ny * vitesse_ * dt,
+        pos_.getAltitude() + nz * vitesse_ * dt
+    );
+    carburant_ -= conso_ * dt;
+    if (carburant_ < 0) carburant_ = 0;
 }
