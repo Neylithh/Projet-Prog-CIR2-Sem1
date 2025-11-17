@@ -1,1 +1,1 @@
-add_executable(Projet "main.cpp" "avion.h")
+add_executable(Projet "main.cpp" "avion.hpp" "avion.cpp")
