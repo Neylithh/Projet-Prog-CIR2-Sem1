@@ -1,6 +1,23 @@
 #include "avion.hpp"
 
 
+Position::Position(float x = 0, float y = 0, float z = 0)
+    : x_(x), y_(y), altitude_(z) {
+}
+float Position::getX() const { return x_; }
+float Position::getY() const { return y_; }
+float Position::getAltitude() const { return altitude_; }
+void Position::setPosition(float x, float y, float alt) {
+    x_ = x;
+    y_ = y;
+    altitude_ = alt;
+}
+
+
+
+
+
+
 Avion::Avion(std::string n, float v, float c, float conso,
     Position pos, const std::vector<Position>& traj)
     : nom_(std::move(n)), vitesse_(v), carburant_(c), conso_(conso),
