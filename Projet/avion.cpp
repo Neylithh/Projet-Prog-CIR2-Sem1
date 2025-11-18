@@ -52,3 +52,31 @@ void Avion::avancer(float dt) {
     carburant_ -= conso_ * dt;
     if (carburant_ < 0) carburant_ = 0;
 }
+
+
+
+
+Parking::Parking(const std::string& nom, int distance)
+    : nom(nom), distancePiste(distance), occupe(false) {
+}
+
+const std::string& Parking::getNom() const {
+    return nom;
+}
+
+int Parking::getDistancePiste() const {
+    return distancePiste;
+}
+
+bool Parking::estOccupe() const {
+    return occupe;
+}
+
+void Parking::occuper() {
+    occupe = true;
+}
+
+void Parking::liberer() {
+    occupe = false;
+}
+};

@@ -61,6 +61,23 @@ enum class EtatAvion {
     STATIONNE
 };
 
+class Parking {
+private:
+    std::string nom;
+    int distancePiste;    
+    bool occupe;          
 
-class Controleur {
-	// probablement classe abstraite (vu quil ya 3 controlleur différents : Centres de Contrôle Régional (CCR/ACC), Centres de Contrôle d'Approche (APP) et Tours de Contrôle d'Aérodrome (TWR)
+public:
+    Parking(const std::string& nom, int distance);
+    const std::string& getNom() const;
+    int getDistancePiste() const;
+    bool estOccupe() const;
+    void occuper();
+    void liberer();
+};
+
+class TWR {
+private :
+    bool pisteLibre;
+    std::vector<Parking> parkings;
+};
