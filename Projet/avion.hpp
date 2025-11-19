@@ -14,15 +14,15 @@ private:
     float altitude_; // altitude
 
 public:
-    // Arguments par dfaut uniquement dans la dclaration (correct)
+    // Arguments par défaut uniquement dans la déclaration (correct)
     Position(float x = 0, float y = 0, float z = 0); // constructeur
-    float getX() const; // renvoie la coordonne x
-    float getY() const; // renvoie la coordonne y
+    float getX() const; // renvoie la coordonnée x
+    float getY() const; // renvoie la coordonnée y
     float getAltitude() const; // renvoie l'altitude 
-    void setPosition(float x, float y, float alt); // met la position aux coordonnes en paramtres
+    void setPosition(float x, float y, float alt); // met la position aux coordonnes en paramètres
 };
 
-enum class EtatAvion { // liste des diffrents tats pour un avion
+enum class EtatAvion { // liste des différents états pour un avion
     DECOLLAGE,
     EN_ROUTE,
     EN_APPROCHE,
@@ -41,8 +41,8 @@ private:
     float carburant_; // niveau de carburant
     float conso_; // consommation de carburant 
     Position pos_; // position de l'avion
-    std::vector<Position> trajectoire_;  // liste de points  suivre
-    EtatAvion etat_; // tat de l'avion
+    std::vector<Position> trajectoire_;  // liste de points à suivre
+    EtatAvion etat_; // état de l'avion
 
 public:
     Avion(std::string n, float v, float c, float conso, Position pos, const std::vector<Position>& traj); // constructeur de l'avion
@@ -52,10 +52,10 @@ public:
     float getConsommation() const; // renvoie la consommaiton de l'avion
     Position getPosition() const; // renvoie la position de l'avion
     const std::vector<Position>& getTrajectoire() const; // renvoie la trajectoire de l'avion
-    EtatAvion getEtat() const; // renvoie l'tat de l'avion
-    void setPosition(const Position& p); // met  jour la position de l'avion
-    void setTrajectoire(const std::vector<Position>& traj); // met  jour la trajectoire de l'avion
-    void setEtat(EtatAvion e); // met  jour l'tat de l'avion
+    EtatAvion getEtat() const; // renvoie l'état de l'avion
+    void setPosition(const Position& p); // met à jour la position de l'avion
+    void setTrajectoire(const std::vector<Position>& traj); // met à jour la trajectoire de l'avion
+    void setEtat(EtatAvion e); // met à jour l'état de l'avion
     void avancer(float temps = 1.0f); // fais avancer l'avion vers le prochain point dans la trajectoire (avance un petit peu donc ne garantit pas qu'on atteigne le point en question)
 };
 
