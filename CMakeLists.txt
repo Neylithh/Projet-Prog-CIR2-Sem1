@@ -6,6 +6,7 @@ set(SFML_STATIC_LIBRARIES TRUE)
 
 if(MSVC)
     set(SFML_DIR "C:/Program Files/SFML/SFML_3.0.2/lib/cmake/SFML")
+    add_compile_options(/utf-8)
 endif(MSVC)
 
     set(DEFS "PATH_IMG=\"${CMAKE_CURRENT_SOURCE_DIR}/img/\"")

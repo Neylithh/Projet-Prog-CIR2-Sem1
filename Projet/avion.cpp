@@ -13,12 +13,8 @@ void Position::setPosition(float x, float y, float alt) {
 }
 
 
-Avion::Avion(std::string n, float v, float c, float conso,
-    Position pos, const std::vector<Position>& traj)
-    : nom_(n), vitesse_(v), carburant_(c), conso_(conso),
-    pos_(pos), trajectoire_(traj), etat_(EtatAvion::EN_ROUTE)
-{
-}
+Avion::Avion(std::string n, float v, float c, float conso, Position pos, const std::vector<Position>& traj)
+    : nom_(n), vitesse_(v), carburant_(c), conso_(conso), pos_(pos), trajectoire_(traj), etat_(EtatAvion::EN_ROUTE) {}
 
 std::string Avion::getNom() const { return nom_; }
 float Avion::getVitesse() const { return vitesse_; }
@@ -44,7 +40,6 @@ void Avion::avancer(float dt) {
     if (trajectoire_.empty())
         return;
 
-    // Remarque : front() retourne une rfrence const, il est bon de l'utiliser ici.
     Position cible = trajectoire_.front();
 
     float dx = cible.getX() - pos_.getX();
@@ -52,26 +47,21 @@ void Avion::avancer(float dt) {
     float dz = cible.getAltitude() - pos_.getAltitude();
     float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-    // Si nous sommes trs proches de la cible (distance < 1.0f), on passe au point suivant
     if (dist < 1.0f) {
-        // Supprime le premier lment
         trajectoire_.erase(trajectoire_.begin());
         return;
     }
 
-    // Calcul des vecteurs unitaires pour le mouvement
     float nx = dx / dist;
     float ny = dy / dist;
     float nz = dz / dist;
 
-    // Mise  jour de la position
     pos_.setPosition(
         pos_.getX() + nx * vitesse_ * dt,
         pos_.getY() + ny * vitesse_ * dt,
         pos_.getAltitude() + nz * vitesse_ * dt
     );
 
-    // Mise  jour du carburant
     carburant_ -= conso_ * dt;
     if (carburant_ < 0) carburant_ = 0;
 }
