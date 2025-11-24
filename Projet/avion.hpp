@@ -75,43 +75,43 @@ public:
     void liberer(); // change l'tat du parking en libre
 };
 
-//class TWR {
-//private:
-//    bool pisteLibre; // indique si la piste est libre ou pas
-//    std::vector<Parking> parkings; // liste des parkings
-//    std::vector<Avion*> filePourDecollage; // file des avions qui attendent de dcoller selon la priorit : "Arbitrairement, l'avion le plus loign de la piste a la priorit au dcollage"
-//public:
-//    bool autoriserAtterrissage(Avion* avion); // vrifie si la piste est libre si oui on la rserve pour l'avion qui atterit sinon on refuse
-//    void libererPiste(); // libre la piste aprs un atterrissage ou un dcollage
-//    Parking* attribuerParking(Avion* avion); // assigne l'avion  un parking libre
-//    void gererRoulage(Avion* avion, Parking* parking); // gre toute la partie au sol de l'avion avant dcollage ou aprs un atterrissage 
-//    void enregistrerPourDecollage(Avion* avion); // ajoute un avion dans la file de dcollage quand il est prt
-//    bool autoriserDecollage(Avion* avion); // vrifie si la piste est libre si oui rserver la piste pour l'avion qui dcolle sinon on refuse
-//    Avion* choisirAvionPourDecollage() const; // dcide qui va dcoller en premier selon la priorit
-//};
-//
-//
-//class APP {
-//private:
-//    std::vector<Avion*> avionsDansZone;
-//    std::queue<Avion*> fileAttenteAtterrissage;
-//
-//    double altitudeAttente;
-//    double rayonAttente;
-//
-//    TWR* twr;
-//    std::mutex mtx;
-//
-//public:
-//    APP(TWR* tour);
-//
-//    void ajouterAvion(Avion* avion);
-//    void assignerTrajectoire(Avion* avion);
-//    void mettreEnAttente(Avion* avion);
-//    Avion* prochainPourAtterrissage();
-//
-//    bool demanderAutorisationAtterrissage(Avion* avion);
-//
-//    void mettreAJour();
-//
-//};
+class TWR {
+private:
+    bool pisteLibre; // indique si la piste est libre ou pas
+    std::vector<Parking> parkings; // liste des parkings
+    std::vector<Avion*> filePourDecollage; // file des avions qui attendent de dcoller selon la priorit : "Arbitrairement, l'avion le plus loign de la piste a la priorit au dcollage"
+public:
+    bool autoriserAtterrissage(Avion* avion); // vrifie si la piste est libre si oui on la rserve pour l'avion qui atterit sinon on refuse
+    void libererPiste(); // libre la piste aprs un atterrissage ou un dcollage
+    Parking* attribuerParking(Avion* avion); // assigne l'avion  un parking libre
+    void gererRoulage(Avion* avion, Parking* parking); // gre toute la partie au sol de l'avion avant dcollage ou aprs un atterrissage 
+    void enregistrerPourDecollage(Avion* avion); // ajoute un avion dans la file de dcollage quand il est prt
+    bool autoriserDecollage(Avion* avion); // vrifie si la piste est libre si oui rserver la piste pour l'avion qui dcolle sinon on refuse
+    Avion* choisirAvionPourDecollage() const; // dcide qui va dcoller en premier selon la priorit
+};
+
+
+class APP {
+private:
+    std::vector<Avion*> avionsDansZone;
+    std::queue<Avion*> fileAttenteAtterrissage;
+
+    double altitudeAttente;
+    double rayonAttente;
+
+    TWR* twr;
+    std::mutex mtx;
+
+public:
+    APP(TWR* tour);
+
+    void ajouterAvion(Avion* avion);
+    void assignerTrajectoire(Avion* avion);
+    void mettreEnAttente(Avion* avion);
+    Avion* prochainPourAtterrissage();
+
+    bool demanderAutorisationAtterrissage(Avion* avion);
+
+    void mettreAJour();
+
+};
