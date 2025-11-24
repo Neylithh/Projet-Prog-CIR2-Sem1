@@ -33,7 +33,7 @@ enum class EtatAvion { // liste des différents états pour un avion
     STATIONNE
 };
 
-
+class Parking;
 
 class Avion {
 private:
@@ -44,6 +44,8 @@ private:
     Position pos_; // position de l'avion
     std::vector<Position> trajectoire_;  // liste de points à suivre
     EtatAvion etat_; // état de l'avion
+    Parking* parking_;
+    mutable std::mutex mtx_;
 
 public:
     Avion(std::string n, float v, float c, float conso, Position pos, const std::vector<Position>& traj); // constructeur de l'avion
@@ -52,12 +54,14 @@ public:
     float getCarburant() const; // renvoie le carburant de l'avion
     float getConsommation() const; // renvoie la consommaiton de l'avion
     Position getPosition() const; // renvoie la position de l'avion
-    const std::vector<Position>& getTrajectoire() const; // renvoie la trajectoire de l'avion
+    const std::vector<Position> getTrajectoire() const; // renvoie la trajectoire de l'avion
     EtatAvion getEtat() const; // renvoie l'état de l'avion
     void setPosition(const Position& p); // met à jour la position de l'avion
     void setTrajectoire(const std::vector<Position>& traj); // met à jour la trajectoire de l'avion
     void setEtat(EtatAvion e); // met à jour l'état de l'avion
     void avancer(float temps = 1.0f); // fais avancer l'avion vers le prochain point dans la trajectoire (avance un petit peu donc ne garantit pas qu'on atteigne le point en question)
+    void setParking(Parking* p);
+    Parking* getParking() const;
 };
 
 
