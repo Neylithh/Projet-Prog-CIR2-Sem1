@@ -20,6 +20,7 @@ public:
     float getY() const; // renvoie la coordonnée y
     float getAltitude() const; // renvoie l'altitude 
     void setPosition(float x, float y, float alt); // met la position aux coordonnes en paramètres
+    float distance(const Position& other) const; // calcule la distance entre deux positions
 };
 
 enum class EtatAvion { // liste des différents états pour un avion
@@ -77,10 +78,13 @@ public:
 
 class TWR {
 private:
-    bool pisteLibre; // indique si la piste est libre ou pas
-    std::vector<Parking> parkings; // liste des parkings
-    std::vector<Avion*> filePourDecollage; // file des avions qui attendent de dcoller selon la priorit : "Arbitrairement, l'avion le plus loign de la piste a la priorit au dcollage"
+    bool pisteLibre_; // indique si la piste est libre ou pas
+    std::vector<Parking> parkings_; // liste des parkings
+    std::vector<Avion*> filePourDecollage_; // file des avions qui attendent de dcoller selon la priorit : "Arbitrairement, l'avion le plus loign de la piste a la priorit au dcollage"
+    std::mutex mutexTWR_;
 public:
+    TWR(const std::vector<Parking>& parkings); // constructeur
+    bool estPisteLibre() const; // vérifie si la piste est libre
     bool autoriserAtterrissage(Avion* avion); // vrifie si la piste est libre si oui on la rserve pour l'avion qui atterit sinon on refuse
     void libererPiste(); // libre la piste aprs un atterrissage ou un dcollage
     Parking* attribuerParking(Avion* avion); // assigne l'avion  un parking libre
@@ -88,6 +92,7 @@ public:
     void enregistrerPourDecollage(Avion* avion); // ajoute un avion dans la file de dcollage quand il est prt
     bool autoriserDecollage(Avion* avion); // vrifie si la piste est libre si oui rserver la piste pour l'avion qui dcolle sinon on refuse
     Avion* choisirAvionPourDecollage() const; // dcide qui va dcoller en premier selon la priorit
+    void retirerAvionDeDecollage(Avion* avion); // retire l'avion une fois qu'il a décollé
 };
 
 
