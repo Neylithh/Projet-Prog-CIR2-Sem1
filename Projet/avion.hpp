@@ -96,27 +96,28 @@ public:
 };
 
 
+
 class APP {
 private:
-    std::vector<Avion*> avionsDansZone;
-    std::queue<Avion*> fileAttenteAtterrissage;
+    std::vector<Avion*> avionsDansZone;//renvoie les avions présents dans la zone 
+    std::queue<Avion*> fileAttenteAtterrissage;//file avec tout les avions attendant d'attérir 
 
-    double altitudeAttente;
-    double rayonAttente;
+    double altitudeAttente;//hauteur à laquelle les avions doivent attendre avant de pouvoir se poser 
+    double rayonAttente;//"circuit d'attente" pour les avions qui doivent attérir 
 
-    TWR* twr;
-    std::mutex mtx;
+    TWR* twr;//tour de controle 
+    std::mutex mtx;//multithreading
 
 public:
-    APP(TWR* tour);
+    APP(TWR* tour);//constructeur de la class APP
 
-    void ajouterAvion(Avion* avion);
-    void assignerTrajectoire(Avion* avion);
-    void mettreEnAttente(Avion* avion);
-    Avion* prochainPourAtterrissage();
+    void ajouterAvion(Avion* avion);//ajoute un avion dans la zone d'approche 
+    void assignerTrajectoire(Avion* avion);//donne la trajectoire pour acceder a la piste d'aterissage 
+    void mettreEnAttente(Avion* avion);//met un avion dans le circuit d'attente 
+    Avion* prochainPourAtterrissage();//donne l'avion suivant dans la file d'attérissage 
 
-    bool demanderAutorisationAtterrissage(Avion* avion);
+    bool demanderAutorisationAtterrissage(Avion* avion);//demande à TWR si il est possible d'attérir 
 
-    void mettreAJour();
+    void mettreAJour();//actualise la zone d'approche
 
 };

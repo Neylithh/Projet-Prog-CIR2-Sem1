@@ -110,18 +110,18 @@ bool TWR::autoriserAtterrissage(Avion* avion) {
     std::lock_guard<std::mutex> lock(mutexTWR_);
     if (pisteLibre_) {
         pisteLibre_ = false; // On verrouille la piste
-        std::cout << "[TWR] Atterrissage autorisÈ pour " << avion->getNom() << std::endl;
+        std::cout << "[TWR] Atterrissage autorisÔøΩ pour " << avion->getNom() << std::endl;
         avion->setEtat(EtatAvion::ATTERRISSAGE);
         return true;
     }
-    std::cout << "[TWR] Atterrissage refusÈ pour " << avion->getNom() << " (Piste occupÈe)" << std::endl;
+    std::cout << "[TWR] Atterrissage refusÔøΩ pour " << avion->getNom() << " (Piste occupÔøΩe)" << std::endl;
     return false;
 }
 
 void TWR::libererPiste() {
     std::lock_guard<std::mutex> lock(mutexTWR_);
     pisteLibre_ = true;
-    std::cout << "[TWR] La piste a ÈtÈ libÈrÈe." << std::endl;
+    std::cout << "[TWR] La piste a ÔøΩtÔøΩ libÔøΩrÔøΩe." << std::endl;
 }
 
 Parking* TWR::attribuerParking(Avion* avion) {
@@ -130,7 +130,7 @@ Parking* TWR::attribuerParking(Avion* avion) {
         if (!parking.estOccupe()) {
             parking.occuper();
             std::cout << "[TWR] Parking " << parking.getNom()
-                << " attribuÈ ‡ " << avion->getNom() << std::endl;
+                << " attribuÔøΩ ÔøΩ " << avion->getNom() << std::endl;
             return &parking;
         }
     }
@@ -141,15 +141,15 @@ Parking* TWR::attribuerParking(Avion* avion) {
 void TWR::gererRoulage(Avion* avion, Parking* parking) {
     avion->setEtat(EtatAvion::ROULE);
     int distance = parking->getDistancePiste();
-    std::cout << "[TWR] ORDRE de roulage donnÈ ‡ " << avion->getNom()
-        << ". Distance ‡ la piste : " << distance << " unitÈs." << std::endl;
+    std::cout << "[TWR] ORDRE de roulage donnÔøΩ ÔøΩ " << avion->getNom()
+        << ". Distance ÔøΩ la piste : " << distance << " unitÔøΩs." << std::endl;
 }
 
 void TWR::enregistrerPourDecollage(Avion* avion) {
     std::lock_guard<std::mutex> lock(mutexTWR_);
     filePourDecollage_.push_back(avion);
     avion->setEtat(EtatAvion::EN_ATTENTE);
-    std::cout << "[TWR] " << avion->getNom() << " enregistrÈ dans la file de dÈcollage. Position dans la file: "
+    std::cout << "[TWR] " << avion->getNom() << " enregistrÔøΩ dans la file de dÔøΩcollage. Position dans la file: "
         << filePourDecollage_.size() << std::endl;
 }
 
@@ -157,7 +157,7 @@ bool TWR::autoriserDecollage(Avion* avion) {
     std::lock_guard<std::mutex> lock(mutexTWR_);
     if (pisteLibre_) {
         pisteLibre_ = false;
-        std::cout << "[TWR] DÈcollage autorisÈ pour " << avion->getNom() << " (Piste rÈservÈe)." << std::endl;
+        std::cout << "[TWR] DÔøΩcollage autorisÔøΩ pour " << avion->getNom() << " (Piste rÔøΩservÔøΩe)." << std::endl;
         avion->setEtat(EtatAvion::DECOLLAGE);
         return true;
     }
@@ -180,8 +180,125 @@ void TWR::retirerAvionDeDecollage(Avion* avion) {
     std::lock_guard<std::mutex> lock(mutexTWR_);
     auto it = std::find(filePourDecollage_.begin(), filePourDecollage_.end(), avion);
     if (it != filePourDecollage_.end()) {
-        std::cout << "[TWR] " << avion->getNom() << " retirÈ de la file de dÈcollage." << std::endl;
+        std::cout << "[TWR] " << avion->getNom() << " retirÔøΩ de la file de dÔøΩcollage." << std::endl;
         filePourDecollage_.erase(it);
     }
     libererPiste();
+}
+
+APP::APP(TWR* tour)
+    : twr(tour), altitudeAttente(3000), rayonAttente(5000)//appel au constructeur pour initialiser les valeurs de rayon attente et altitude attente 
+{
+}
+
+void APP::ajouterAvion(Avion* avion)//ajoute un avion √† la zone d'approche 
+{
+    std::lock_guard<std::mutex> lock(mtx);
+
+    avionsDansZone.push_back(avion);
+    avion->setEtat(EtatAvion::EN_APPROCHE);
+
+    std::cout << "[APP] Avion " << avion->getNom()
+              << " entre dans la zone d‚Äôapproche.\n";
+}
+
+void APP::assignerTrajectoire(Avion* avion)//donne la trajectoire a un avion pour att√©rir 
+{
+    std::lock_guard<std::mutex> lock(mtx);
+
+    std::vector<Position> traj = {//trajectoire pour att√©rir 
+        Position(0, 0, 2000),
+        Position(0, -3000, 1000),
+        Position(0, -5000, 0)
+    };
+
+    avion->setTrajectoire(traj);
+    avion->setEtat(EtatAvion::EN_APPROCHE);
+
+    std::cout << "[APP] Trajectoire d‚Äôapproche assign√©e √† "
+              << avion->getNom() << ".\n";
+}
+
+void APP::mettreEnAttente(Avion* avion)//ajoute un avion a la file d'attente 
+{
+    std::lock_guard<std::mutex> lock(mtx);
+
+    avion->setEtat(EtatAvion::EN_ATTENTE);
+
+    std::vector<Position> holding = {//circuit d'attente 
+        Position(rayonAttente, 0, altitudeAttente),
+        Position(0, rayonAttente, altitudeAttente),
+        Position(-rayonAttente, 0, altitudeAttente),
+        Position(0, -rayonAttente, altitudeAttente)
+    };
+
+    avion->setTrajectoire(holding);
+
+    fileAttenteAtterrissage.push(avion);
+
+    std::cout << "[APP] Avion " << avion->getNom()
+              << " plac√© dans la file d‚Äôattente.\n";
+}
+
+Avion* APP::prochainPourAtterrissage()//prend le prochain de la file 
+{
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (fileAttenteAtterrissage.empty())
+        return nullptr;
+
+    Avion* a = fileAttenteAtterrissage.front();
+    fileAttenteAtterrissage.pop();
+
+    return a;
+}
+
+bool APP::demanderAutorisationAtterrissage(Avion* avion)//demande a twr (tour de controle)si c'est possible d'att√©rir 
+{
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (!twr)
+        return false;
+
+    std::cout << "[APP] Demande d‚Äôautorisation d‚Äôatterrissage pour "
+              << avion->getNom() << "‚Ä¶\n";
+//dans le cas ou la tour accepte que l'avion att√©risse 
+    if (twr->autoriserAtterrissage(avion)) {
+
+        std::cout << "[APP] Autorisation accord√©e.\n";
+
+        avion->setEtat(EtatAvion::ATTERRISSAGE);
+
+        std::vector<Position> finale = {//trajectoire finale pour att√©rir 
+            Position(0, -1000, 500),
+            Position(0, -2000, 0)
+        };
+
+        avion->setTrajectoire(finale);
+        return true;
+    }
+//dans le cas ou la demande d'aterissage est refus√©e 
+    std::cout << "[APP] Autorisation refus√©e : avion remis en attente.\n";
+    mettreEnAttente(avion);
+    return false;
+}
+
+void APP::mettreAJour()//mise a jout r√©guli√®re des avions dans la zone d'approche 
+{
+    std::lock_guard<std::mutex> lock(mtx);
+
+    for (Avion* avion : avionsDansZone) {
+//met a jour la position de l'avion 
+        avion->avancer(1.0f);
+//dans le cas ou l'avion a le carburant faible 
+        if (avion->getCarburant() < 300) {
+            std::cout << "[APP] CARBURANT FAIBLE : "
+                      << avion->getNom() << "\n";
+        }//si l'avion n'as plus de trajectoire , il demande l'autorisation d'att√©rir 
+        if (avion->getTrajectoire().empty() &&
+            avion->getEtat() == EtatAvion::EN_APPROCHE)
+        {
+            demanderAutorisationAtterrissage(avion);
+        }
+    }
 }
