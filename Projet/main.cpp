@@ -1,6 +1,5 @@
 #include "avion.hpp"
 
-void routine_avion(Avion& avion, APP& app, TWR& twr);
 
 int main() {
     std::cout << "========================================\n";
