@@ -16,7 +16,7 @@ main() {
     // C. CRÉATION DU THREAD (La syntaxe pure)
     // ---------------------------------------------------------
     // std::thread  nom_variable ( fonction,      ref(arg1),    ref(arg2) );
-    std::thread     pilote1(routine_avion, std::ref(monAvion), std::ref(approche));
+    std::thread pilote1(routine_avion, std::ref(monAvion), std::ref(approche), std::ref(tour));
     // ---------------------------------------------------------
 
     // D. Le main fait autre chose (ex: Affichage SFML ou boucle d'attente)
