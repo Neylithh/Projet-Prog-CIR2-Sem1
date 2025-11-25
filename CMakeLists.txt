@@ -17,4 +17,4 @@ link_libraries(SFML::Graphics SFML::Window SFML::System)
 
 
 
-add_executable (Projet "Projet/main.cpp" "Projet/avion.cpp" "Projet/simulation.cpp")
+add_executable (Projet "Projet/main.cpp" "Projet/avion.cpp" "Projet/thread.cpp")
