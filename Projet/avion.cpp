@@ -112,27 +112,27 @@ Parking* Avion::getParking() const {
 
 
 Parking::Parking(const std::string& nom, int distance)
-    : nom(nom), distancePiste(distance), occupe(false) {
+    : nom_(nom), distancePiste_(distance), occupe_(false) {
 }
 
 const std::string& Parking::getNom() const {
-    return nom;
+    return nom_;
 }
 
 int Parking::getDistancePiste() const {
-    return distancePiste;
+    return distancePiste_;
 }
 
 bool Parking::estOccupe() const {
-    return occupe;
+    return occupe_;
 }
 
 void Parking::occuper() {
-    occupe = true;
+    occupe_ = true;
 }
 
 void Parking::liberer() {
-    occupe = false;
+    occupe_ = false;
 }
 
 TWR::TWR(const std::vector<Parking>& parkings)
@@ -245,15 +245,15 @@ void TWR::retirerAvionDeDecollage(Avion* avion) {
 }
 
 APP::APP(TWR* tour)
-    : twr(tour), altitudeAttente(3000), rayonAttente(5000)//appel au constructeur pour initialiser les valeurs de rayon attente et altitude attente 
+    : twr_(tour), altitudeAttente_(3000), rayonAttente_(5000)//appel au constructeur pour initialiser les valeurs de rayon attente et altitude attente 
 {
 }
 
 void APP::ajouterAvion(Avion* avion)//ajoute un avion à la zone d'approche 
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    std::lock_guard<std::mutex> lock(mutexAPP_);
 
-    avionsDansZone.push_back(avion);
+    avionsDansZone_.push_back(avion);
     avion->setEtat(EtatAvion::EN_APPROCHE);
 
     std::cout << "[APP] Avion " << avion->getNom()
@@ -262,7 +262,7 @@ void APP::ajouterAvion(Avion* avion)//ajoute un avion à la zone d'approche 
 
 void APP::assignerTrajectoire(Avion* avion)//donne la trajectoire pour acceder a la piste d'aterissage 
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    std::lock_guard<std::mutex> lock(mutexAPP_);
 
     std::vector<Position> traj = {//trajectoire pour attérir 
         Position(0, 0, 2000),
@@ -279,20 +279,20 @@ void APP::assignerTrajectoire(Avion* avion)//donne la trajectoire pour acceder a
 
 void APP::mettreEnAttente(Avion* avion)//ajoute un avion a la file d'attente 
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    std::lock_guard<std::mutex> lock(mutexAPP_);
 
     avion->setEtat(EtatAvion::EN_ATTENTE);
 
     std::vector<Position> holding = {//circuit d'attente 
-        Position(rayonAttente, 0, altitudeAttente),
-        Position(0, rayonAttente, altitudeAttente),
-        Position(-rayonAttente, 0, altitudeAttente),
-        Position(0, -rayonAttente, altitudeAttente)
+        Position(rayonAttente_, 0, altitudeAttente_),
+        Position(0, rayonAttente_, altitudeAttente_),
+        Position(-rayonAttente_, 0, altitudeAttente_),
+        Position(0, -rayonAttente_, altitudeAttente_)
     };
 
     avion->setTrajectoire(holding);
 
-    fileAttenteAtterrissage.push(avion);
+    fileAttenteAtterrissage_.push(avion);
 
     std::cout << "[APP] Avion " << avion->getNom()
         << " placé dans la file d’attente.\n";
@@ -300,28 +300,28 @@ void APP::mettreEnAttente(Avion* avion)//ajoute un avion a la file d'attente 
 
 Avion* APP::prochainPourAtterrissage()//prend le prochain de la file 
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    std::lock_guard<std::mutex> lock(mutexAPP_);
 
-    if (fileAttenteAtterrissage.empty())
+    if (fileAttenteAtterrissage_.empty())
         return nullptr;
 
-    Avion* a = fileAttenteAtterrissage.front();
-    fileAttenteAtterrissage.pop();
+    Avion* a = fileAttenteAtterrissage_.front();
+    fileAttenteAtterrissage_.pop();
 
     return a;
 }
 
 bool APP::demanderAutorisationAtterrissage(Avion* avion)//demande a twr (tour de controle)si c'est possible d'attérir 
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    std::lock_guard<std::mutex> lock(mutexAPP_);
 
-    if (!twr)
+    if (!twr_)
         return false;
 
     std::cout << "[APP] Demande d’autorisation d’atterrissage pour "
         << avion->getNom() << "…\n";
     //dans le cas ou la tour accepte que l'avion attérisse 
-    if (twr->autoriserAtterrissage(avion)) {
+    if (twr_->autoriserAtterrissage(avion)) {
 
         std::cout << "[APP] Autorisation accordée.\n";
 
@@ -346,9 +346,9 @@ bool APP::demanderAutorisationAtterrissage(Avion* avion)//demande a twr (tour de
 
 void APP::mettreAJour()//mise a jout régulière des avions dans la zone d'approche 
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    std::lock_guard<std::mutex> lock(mutexAPP_);
 
-    for (Avion* avion : avionsDansZone) {
+    for (Avion* avion : avionsDansZone_) {
         //met a jour la position de l'avion 
         avion->avancer(1.0f);
         //dans le cas ou l'avion a le carburant faible 

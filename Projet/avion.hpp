@@ -67,9 +67,9 @@ public:
 
 class Parking {
 private:
-    std::string nom; // nom du parking
-    int distancePiste; // distance entre le parking et la piste utile pour la priorit pour la file de dcollage
-    bool occupe; // indique si le parking est occup ou pas
+    std::string nom_; // nom du parking
+    int distancePiste_; // distance entre le parking et la piste utile pour la priorit pour la file de dcollage
+    bool occupe_; // indique si le parking est occup ou pas
 
 public:
     Parking(const std::string& nom, int distance); // constructeur
@@ -85,7 +85,7 @@ private:
     bool pisteLibre_; // indique si la piste est libre ou pas
     std::vector<Parking> parkings_; // liste des parkings
     std::vector<Avion*> filePourDecollage_; // file des avions qui attendent de dcoller selon la priorit : "Arbitrairement, l'avion le plus loign de la piste a la priorit au dcollage"
-    std::mutex mutexTWR_;
+    mutable std::mutex mutexTWR_;
 public:
     TWR(const std::vector<Parking>& parkings); // constructeur
     bool estPisteLibre() const; // vérifie si la piste est libre
@@ -103,14 +103,14 @@ public:
 
 class APP {
 private:
-    std::vector<Avion*> avionsDansZone;//renvoie les avions présents dans la zone 
-    std::queue<Avion*> fileAttenteAtterrissage;//file avec tout les avions attendant d'attérir 
+    std::vector<Avion*> avionsDansZone_;//renvoie les avions présents dans la zone 
+    std::queue<Avion*> fileAttenteAtterrissage_;//file avec tout les avions attendant d'attérir 
 
-    double altitudeAttente;//hauteur à laquelle les avions doivent attendre avant de pouvoir se poser 
-    double rayonAttente;//"circuit d'attente" pour les avions qui doivent attérir 
+    double altitudeAttente_;//hauteur à laquelle les avions doivent attendre avant de pouvoir se poser 
+    double rayonAttente_;//"circuit d'attente" pour les avions qui doivent attérir 
 
-    TWR* twr;//tour de controle 
-    std::mutex mtx;//multithreading
+    TWR* twr_;//tour de controle 
+    std::mutex mutexAPP_;//multithreading
 
 public:
     APP(TWR* tour);//constructeur de la class APP
