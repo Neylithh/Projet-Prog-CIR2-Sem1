@@ -1,5 +1,5 @@
 #include "avion.hpp"
-#include "thread.cpp"
+#include "thread.hpp"
 
 main() {
     // A. Préparation du Monde
