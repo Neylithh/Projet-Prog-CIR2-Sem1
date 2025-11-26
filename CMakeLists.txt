@@ -10,35 +10,42 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(SFML_STATIC_LIBRARIES TRUE)
 
 if(MSVC)
-    # Chemin vers SFML (Adaptez si n�cessaire selon votre installation)
+    # Chemin vers SFML (Adaptez si nécessaire)
     set(SFML_DIR "C:/Program Files/SFML/SFML_3.0.2/lib/cmake/SFML")
-    add_compile_options(/utf-8) # Pour les accents dans la console Windows
+    add_compile_options(/utf-8)
 endif(MSVC)
 
-# --- 2. DEFINITIONS ---
-# Permet d'utiliser PATH_IMG dans votre code C++ pour charger les images
-set(DEFS "PATH_IMG=\"${CMAKE_CURRENT_SOURCE_DIR}/Projet/img/\"")
-add_compile_definitions(${DEFS})
-
-# --- 3. DEPENDANCES ---
+# --- 2. DEPENDANCES ---
+# Attention : SFML 3 utilise le composant "System" mais inclut Window/Graphics
 find_package(SFML 3 COMPONENTS Window Graphics System REQUIRED)
 find_package(Threads REQUIRED)
 
-# --- 4. EXECUTABLE ---
-# On liste les fichiers en pr�cisant qu'ils sont dans le sous-dossier "Projet/"
+# --- 3. EXECUTABLE ---
 add_executable(Simulateur
     "Projet/main.cpp"
     "Projet/avion.cpp"
     "Projet/thread.cpp"
-    # C'est une bonne pratique d'ajouter les .hpp pour qu'ils apparaissent dans l'IDE
     "Projet/avion.hpp"
     "Projet/thread.hpp"
 )
 
-# --- 5. LIENS (LINKING) ---
+# --- 4. LIENS (LINKING) ---
 target_link_libraries(Simulateur PRIVATE 
     SFML::Graphics 
     SFML::Window 
     SFML::System
     Threads::Threads
+)
+
+# =========================================================
+# --- 5. GESTION DES RESSOURCES (IMAGES) ---
+# =========================================================
+# Cette commande copie le dossier "Projet/img" vers le dossier de l'exécutable (Build)
+# Elle s'exécute automatiquement après la compilation.
+
+add_custom_command(TARGET Simulateur POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/Projet/img"
+    "$<TARGET_FILE_DIR:Simulateur>/img"
+    COMMENT "Copie du dossier img vers le dossier de l'exécutable..."
 )
