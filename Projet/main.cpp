@@ -1,61 +1,56 @@
 #include "avion.hpp"
-
+#include "thread.hpp"
 
 int main() {
     std::cout << "========================================\n";
-    std::cout << "   TEST DE SIMULATION CONTROLE AERIEN   \n";
+    std::cout << "    SIMULATION CONTROLE AERIEN C++      \n";
     std::cout << "========================================\n";
 
-    // 1. CRÉATION DE L'ENVIRONNEMENT (Le "Monde")
-    // On crée 2 parkings pour accueillir nos 2 avions de test
+    // 1. Initialisation Environnement
     std::vector<Parking> parkings;
-    parkings.push_back(Parking("P-ALPHA", 100)); // Parking proche
-    parkings.push_back(Parking("P-BRAVO", 500)); // Parking loin
+    parkings.push_back(Parking("P-ALPHA", 100));
+    parkings.push_back(Parking("P-BRAVO", 500));
+    parkings.push_back(Parking("P-CHARLIE", 800));
 
-    // On instancie les contrôleurs
     TWR tour(parkings);
     APP approche(&tour);
 
-    // 2. CRÉATION DES AVIONS (Les "Données")
-    // Avion 1 : Loin (30km), arrive vite
-    Position pos1(30000, 0, 10000);
-    std::vector<Position> planDeVol;
-    planDeVol.push_back(Position(0, 0, 0)); // "Va vers le centre"
-    // Vitesse 1000.0f pour que ça aille vite à l'écran !
-    Avion avion1("AFR001 (Air France)", 1000.0f, 5000.0f, 10.0f, pos1, planDeVol);
+    // 2. Création des Avions
+    Position pos1(40000, 0, 10000); // Loin
+    std::vector<Position> planDeVol1 = { Position(0, 0, 0) }; // Vers l'aéroport
+    Avion avion1("AFR001", 800.0f, 5000.0f, 10.0f, pos1, planDeVol1);
 
-    // Avion 2 : Plus proche (22km), arrive aussi vite
-    Position pos2(22000, 5000, 8000);
-    Avion avion2("BAW404 (British Airways)", 1000.0f, 5000.0f, 10.0f, pos2, planDeVol);
+    Position pos2(35000, 5000, 10000);
+    std::vector<Position> planDeVol2 = { Position(0, 0, 0) };
+    Avion avion2("BAW404", 800.0f, 5000.0f, 10.0f, pos2, planDeVol2);
 
-    // 3. LANCEMENT DES THREADS (Les "Pilotes")
-    std::cout << "[MAIN] Lancement des threads...\n";
+    // 3. Lancement des Threads
+    std::cout << "[MAIN] Lancement des services...\n";
 
+    std::thread tTwr(routine_twr, std::ref(tour));
+    std::thread tApp(routine_app, std::ref(approche)); // Thread APP ajouté
+
+    std::cout << "[MAIN] Lancement des pilotes...\n";
     std::thread t1(routine_avion, std::ref(avion1), std::ref(approche), std::ref(tour));
     std::thread t2(routine_avion, std::ref(avion2), std::ref(approche), std::ref(tour));
 
-    // 4. OBSERVATION (Optionnel : Boucle d'affichage du statut)
-    // On regarde ce qui se passe tant que les avions ne sont pas garés
-    while (avion1.getEtat() != EtatAvion::STATIONNE ||
-        avion2.getEtat() != EtatAvion::STATIONNE) {
-
-        // On affiche juste un petit point pour montrer que le main est vivant
-        // (Les logs détaillés sont faits par les cout dans tes classes)
-        // std::cout << "."; 
-        // std::cout.flush();
+    // 4. Boucle principale (Observation)
+    while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
 
-    // 5. NETTOYAGE
-    std::cout << "\n[MAIN] Tous les avions semblent garés. Fin des threads.\n";
+        // Affiche la position de l'avion 1 juste pour vérifier qu'il bouge
+        // Note: C'est du debug rapide
+        Position p = avion1.getPosition();
+        std::cout << "[RADAR] " << avion1.getNom()
+            << " est en (" << (int)p.getX() << ", "
+            << (int)p.getY() << ", "
+            << (int)p.getAltitude() << ")\n";
+    }
 
     if (t1.joinable()) t1.join();
     if (t2.joinable()) t2.join();
-
-    std::cout << "========================================\n";
-    std::cout << "        TEST REUSSI AVEC SUCCES         \n";
-    std::cout << "========================================\n";
+    if (tTwr.joinable()) tTwr.join();
+    if (tApp.joinable()) tApp.join();
 
     return 0;
 }
-
