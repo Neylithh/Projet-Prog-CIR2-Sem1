@@ -1,11 +1,13 @@
 #pragma once
 #include <thread>
 #include <chrono>
-#include "avion.hpp"
+// On inclut SEULEMENT avion.hpp car tu m'as dit que toutes les classes (CCR, Aeroport...) y sont.
+#include "avion.hpp" 
 
-// Routines des threads
-void routine_avion(Avion& avion, APP& app, TWR& twr);
+// Déclarations des routines (Promesses)
+void routine_avion(Avion& avion, Aeroport& depart, Aeroport& arrivee, CCR& ccr);
 void routine_twr(TWR& twr);
-void routine_app(APP& app); // Nouvelle routine pour l'APP
+void routine_app(APP& app);
+void routine_ccr(CCR& ccr); // <--- La promesse est ici
 
 void simuler_pause(int ms);

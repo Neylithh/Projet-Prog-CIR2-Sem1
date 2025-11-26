@@ -1,167 +1,170 @@
 #include "thread.hpp"
-#include <iostream>
+#include <iostream> // Nécessaire pour les cout
 
 void simuler_pause(int ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-// ================= THREAD TWR =================
+// =========================================================
+// C'EST CETTE FONCTION QUI MANQUAIT A L'APPEL (L'erreur VCR001)
+// =========================================================
+void routine_ccr(CCR& ccr) {
+    while (true) {
+        // Le cerveau global surveille l'espace aérien en continu
+        ccr.gererEspaceAerien();
+        simuler_pause(500); // Vérification toutes les 0.5 secondes
+    }
+}
+
+// --- ROUTINE TWR ---
 void routine_twr(TWR& twr) {
     while (true) {
-        simuler_pause(500); // Check toutes les 0.5s
+        simuler_pause(500);
 
-        // Gestion des décollages
+        // La tour gère les décollages si la piste est libre
         if (twr.estPisteLibre()) {
-            Avion* avionPrioritaire = twr.choisirAvionPourDecollage();
-
-            if (avionPrioritaire != nullptr) {
-                // On vérifie si l'avion est prêt (a fini son roulage vers la piste)
-                // Note: Dans une vraie simu, il faudrait vérifier la position exacte
-                if (avionPrioritaire->getEtat() == EtatAvion::EN_ATTENTE) {
-                    twr.autoriserDecollage(avionPrioritaire);
-                }
+            Avion* avion = twr.choisirAvionPourDecollage();
+            // On vérifie que l'avion est bien en attente au seuil de piste
+            if (avion && avion->getEtat() == EtatAvion::EN_ATTENTE_DECOLLAGE) {
+                twr.autoriserDecollage(avion);
             }
         }
     }
 }
 
-// ================= THREAD APP =================
+// --- ROUTINE APP ---
 void routine_app(APP& app) {
-    // CORRECTION : Ajout de la boucle infinie, sinon le thread s'arrête tout de suite
     while (true) {
+        // L'approche met à jour les avions dans sa zone (carburant, trajectoires)
         app.mettreAJour();
-        simuler_pause(200); // Mise à jour de l'APP toutes les 200ms
+        simuler_pause(200);
     }
 }
 
-// ================= THREAD AVION =================
-void routine_avion(Avion& avion, APP& app, TWR& twr) {
+// --- ROUTINE AVION (PILOTE AUTOMATIQUE COMPLET) ---
+void routine_avion(Avion& avion, Aeroport& depart, Aeroport& arrivee, CCR& ccr) {
 
-    // Petite pause initiale pour décaler les démarrages
-    simuler_pause(rand() % 1000);
+    // On définit la destination dans l'ordinateur de bord
+    avion.setDestination(&arrivee);
 
-    while (true) {
+    // 1. Initialisation au sol : Demande de parking à l'aéroport de départ
+    Parking* pDepart = depart.twr->attribuerParking(&avion);
+    if (!pDepart) {
+        // Si l'aéroport est plein à craquer, le vol est annulé
+        // (Peu probable au démarrage mais bonne pratique)
+        avion.setEtat(EtatAvion::TERMINE);
+        return;
+    }
 
+    // Simulation de l'embarquement passagers
+    simuler_pause(2000);
+
+    while (avion.getEtat() != EtatAvion::TERMINE) {
         EtatAvion etat = avion.getEtat();
 
-        // 1. Mise à jour physique (Sauf si stationné)
-        if (etat != EtatAvion::STATIONNE) {
-            // dt = 0.5f signifie qu'on avance de 0.5 secondes de simu à chaque tick
-            avion.avancer(0.5f);
-        }
+        // --- PHASE 1 : AU SOL (DEPART) ---
+        if (etat == EtatAvion::STATIONNE) {
+            // Le pilote demande l'autorisation de mise en route
+            depart.twr->enregistrerPourDecollage(&avion);
 
-        // 2. Logique d'état
-
-        // --- ARRIVEE DANS LA ZONE ---
-        if (etat == EtatAvion::EN_ROUTE) {
-            // Si on approche de la zone (X < 25000) ET qu'on n'a pas encore une trajectoire complexe
-            // (planDeVol1 dans main a une taille de 1, donc < 2 est le bon trigger)
-            if (avion.getPosition().getX() < 25000 && avion.getTrajectoire().size() <= 1) {
-                app.ajouterAvion(&avion);
-                app.assignerTrajectoire(&avion);
-            }
-        }
-
-        // --- APPROCHE ---
-        else if (etat == EtatAvion::EN_APPROCHE) {
-            // Si on a fini la trajectoire d'approche, on demande à se poser
-            if (avion.getTrajectoire().empty()) {
-                bool autorise = app.demanderAutorisationAtterrissage(&avion);
-                if (!autorise) {
-                    // Si refusé, on attend un peu avant de redemander
-                    simuler_pause(1000);
-                }
-            }
-        }
-
-        // --- ATTERRISSAGE ---
-        else if (etat == EtatAvion::ATTERRISSAGE) {
-            // Si altitude proche de 0
-            if (avion.getPosition().getAltitude() <= 5.0f) {
-                std::cout << ">>> " << avion.getNom() << " TOUCHDOWN !\n";
-                // Force Z à 0
-                Position p = avion.getPosition();
-                avion.setPosition(Position(p.getX(), p.getY(), 0));
-
-                Parking* leParking = twr.attribuerParking(&avion);
-                if (leParking != nullptr) {
-                    // Créer trajectoire vers parking (simulée simple)
-                    std::vector<Position> versParking = { Position(100, 100, 0) }; // Coordonnées parking fictives
-                    avion.setTrajectoire(versParking);
-                    twr.gererRoulage(&avion, leParking);
-
-                    // IMPORTANT : On libère la piste APRÈS avoir dégagé (ici simulé immédiatement pour simplifier)
-                    twr.libererPiste();
-                }
-                else {
-                    // Pas de parking dispo, on attend sur la piste (bloque tout) ou on despawn
-                    std::cout << ">>> " << avion.getNom() << " Bloqué sur piste (Pas de parking).\n";
-                    twr.libererPiste(); // On libère quand même pour pas casser la simu
-                }
-            }
-        }
-
-        // --- ROULAGE (Vers Parking) ---
-        else if (etat == EtatAvion::ROULE && avion.getParking() != nullptr) {
-            if (avion.getTrajectoire().empty()) {
-                simuler_pause(500);
-                avion.setEtat(EtatAvion::STATIONNE);
-                std::cout << ">>> " << avion.getNom() << " MOTEURS COUPES au parking "
-                    << avion.getParking()->getNom() << ".\n";
-            }
-        }
-
-        // --- STATIONNEMENT & REDECOLLAGE ---
-        else if (etat == EtatAvion::STATIONNE) {
-            simuler_pause(5000); // Escale de 5 secondes réelles
-
-            // Demande de départ
-            twr.enregistrerPourDecollage(&avion);
-
-            // Libère parking
+            // On libère le parking
             if (avion.getParking()) {
                 avion.getParking()->liberer();
-                // On garde la ref du parking un instant pour la logique de priorité TWR si besoin
-                // Mais ici on le set à nullptr
                 avion.setParking(nullptr);
             }
 
-            // Roulage vers la piste (Trajectoire fictive)
-            std::vector<Position> versPiste = { Position(0,0,0) };
-            avion.setTrajectoire(versPiste);
-            // On passe en EN_ATTENTE (roulage vers seuil de piste)
-            // La TWR passera l'état à DECOLLAGE quand la piste sera libre
-            avion.setEtat(EtatAvion::EN_ATTENTE);
+            // Roulage vers la piste (Trajectoire fictive simple)
+            std::vector<Position> taxi = { depart.position };
+            avion.setTrajectoire(taxi);
 
-            std::cout << "--- " << avion.getNom() << " commence le roulage vers la piste.\n";
+            // Temps de roulage
+            simuler_pause(1000);
+
+            // Arrivée au seuil de piste, prêt au départ
+            avion.setEtat(EtatAvion::EN_ATTENTE_DECOLLAGE);
         }
 
-        // --- DECOLLAGE ---
+        // --- PHASE 2 : DECOLLAGE ET MONTEE ---
         else if (etat == EtatAvion::DECOLLAGE) {
-            // Si on vient de passer en décollage et qu'on a pas de traj de montée
-            if (avion.getTrajectoire().empty() || avion.getPosition().getAltitude() < 100) {
-                std::vector<Position> montee = { Position(40000, 0, 10000) }; // On repart loin
+            // Si on n'a pas de trajectoire de montée, on en crée une (vers 8000m)
+            if (avion.getTrajectoire().empty()) {
+                Position cible = avion.getPosition();
+                cible.setPosition(cible.getX(), cible.getY(), 8000);
+                std::vector<Position> montee = { cible };
                 avion.setTrajectoire(montee);
             }
 
-            // Si on est assez haut/loin
+            // Une fois une certaine altitude atteinte (5000m), on passe sur la fréquence régionale (CCR)
             if (avion.getPosition().getAltitude() > 5000) {
-                twr.retirerAvionDeDecollage(&avion);
+                // La tour nous oublie
+                depart.twr->retirerAvionDeDecollage(&avion);
 
-                // RESET pour boucle infinie du scénario
-                std::cout << ">>> " << avion.getNom() << " quitte la zone. (Reset Scenario)\n";
+                // Le CCR nous prend en charge
+                ccr.prendreEnCharge(&avion);
 
-                // On replace l'avion au début
-                avion.setPosition(Position(40000 + (rand() % 5000), 0, 10000));
-                std::vector<Position> retour = { Position(0,0,0) };
-                avion.setTrajectoire(retour);
-                avion.setEtat(EtatAvion::EN_ROUTE);
-
-                // Pause avant de revenir
-                simuler_pause(2000);
+                // On met le cap direct sur l'aéroport d'arrivée
+                std::vector<Position> route = { arrivee.position };
+                avion.setTrajectoire(route);
             }
         }
 
-        simuler_pause(100); // Tick rate de l'avion (10Hz)
+        // --- PHASE 3 : CROISIERE (Géré par CCR) ---
+        else if (etat == EtatAvion::EN_ROUTE) {
+            // On calcule la distance restante
+            float dist = avion.getPosition().distance(arrivee.position);
+
+            // Si on est à moins de 20km (20000 unités), on contacte l'Approche (APP)
+            if (dist < 20000) {
+                ccr.transfererVersApproche(&avion, arrivee.app);
+                // Note : Cette fonction change l'état de l'avion en EN_APPROCHE
+            }
+        }
+
+        // --- PHASE 4 : APPROCHE (Géré par APP) ---
+        else if (etat == EtatAvion::EN_APPROCHE) {
+            // Si on a fini les vecteurs d'approche, on demande la finale (atterrissage)
+            if (avion.getTrajectoire().empty()) {
+                bool autorise = arrivee.app->demanderAutorisationAtterrissage(&avion);
+                if (!autorise) {
+                    simuler_pause(1000); // On fait un tour d'attente si refusé
+                }
+            }
+        }
+
+        // --- PHASE 5 : ATTERRISSAGE ET ARRRET ---
+        else if (etat == EtatAvion::ATTERRISSAGE) {
+            // Si on touche le sol (Altitude proche de 0)
+            if (avion.getPosition().getAltitude() <= 10.0f) {
+
+                // On demande un parking à l'arrivée
+                Parking* pArrivee = arrivee.twr->attribuerParking(&avion);
+
+                if (pArrivee) {
+                    // On libère la piste immédiatement
+                    arrivee.twr->libererPiste();
+                    arrivee.twr->gererRoulageAuSol(&avion, pArrivee);
+
+                    simuler_pause(1000); // Temps de roulage vers le gate
+
+                    avion.setEtat(EtatAvion::TERMINE);
+                }
+                else {
+                    // Cas critique : piste libérée mais pas de parking (évacuation)
+                    arrivee.twr->libererPiste();
+                    avion.setEtat(EtatAvion::TERMINE);
+                }
+            }
+        }
+
+        // --- MOTEUR PHYSIQUE ---
+        // Tant que le vol n'est pas fini et qu'on n'attend pas au sol
+        if (etat != EtatAvion::TERMINE && etat != EtatAvion::EN_ATTENTE_DECOLLAGE && etat != EtatAvion::STATIONNE) {
+            // On va plus vite en croisière (x3) pour ne pas attendre 10 ans devant l'écran
+            float dt = (etat == EtatAvion::EN_ROUTE) ? 3.0f : 0.8f;
+            avion.avancer(dt);
+        }
+
+        // Tick rate du pilote (réflexes)
+        simuler_pause(100);
     }
 }
