@@ -27,8 +27,11 @@ void routine_twr(TWR& twr) {
 
 // ================= THREAD APP =================
 void routine_app(APP& app) {
-    // Lance la boucle de surveillance de l'APP
-    app.mettreAJour();
+    // CORRECTION : Ajout de la boucle infinie, sinon le thread s'arrête tout de suite
+    while (true) {
+        app.mettreAJour();
+        simuler_pause(200); // Mise à jour de l'APP toutes les 200ms
+    }
 }
 
 // ================= THREAD AVION =================
@@ -38,19 +41,22 @@ void routine_avion(Avion& avion, APP& app, TWR& twr) {
     simuler_pause(rand() % 1000);
 
     while (true) {
-        // 1. Mise à jour physique
-        if (avion.getEtat() != EtatAvion::STATIONNE) {
-            avion.avancer(0.5f); // Avance selon la vitesse
-        }
 
         EtatAvion etat = avion.getEtat();
+
+        // 1. Mise à jour physique (Sauf si stationné)
+        if (etat != EtatAvion::STATIONNE) {
+            // dt = 0.5f signifie qu'on avance de 0.5 secondes de simu à chaque tick
+            avion.avancer(0.5f);
+        }
 
         // 2. Logique d'état
 
         // --- ARRIVEE DANS LA ZONE ---
         if (etat == EtatAvion::EN_ROUTE) {
-            // Si on approche de la zone (distance arbitraire < 30000)
-            if (avion.getPosition().getX() < 25000 && avion.getTrajectoire().size() < 2) {
+            // Si on approche de la zone (X < 25000) ET qu'on n'a pas encore une trajectoire complexe
+            // (planDeVol1 dans main a une taille de 1, donc < 2 est le bon trigger)
+            if (avion.getPosition().getX() < 25000 && avion.getTrajectoire().size() <= 1) {
                 app.ajouterAvion(&avion);
                 app.assignerTrajectoire(&avion);
             }
@@ -60,27 +66,37 @@ void routine_avion(Avion& avion, APP& app, TWR& twr) {
         else if (etat == EtatAvion::EN_APPROCHE) {
             // Si on a fini la trajectoire d'approche, on demande à se poser
             if (avion.getTrajectoire().empty()) {
-                app.demanderAutorisationAtterrissage(&avion);
+                bool autorise = app.demanderAutorisationAtterrissage(&avion);
+                if (!autorise) {
+                    // Si refusé, on attend un peu avant de redemander
+                    simuler_pause(1000);
+                }
             }
         }
 
         // --- ATTERRISSAGE ---
         else if (etat == EtatAvion::ATTERRISSAGE) {
-            // Si altitude 0 atteinte
-            if (avion.getPosition().getAltitude() <= 10.0f) {
+            // Si altitude proche de 0
+            if (avion.getPosition().getAltitude() <= 5.0f) {
                 std::cout << ">>> " << avion.getNom() << " TOUCHDOWN !\n";
+                // Force Z à 0
+                Position p = avion.getPosition();
+                avion.setPosition(Position(p.getX(), p.getY(), 0));
 
                 Parking* leParking = twr.attribuerParking(&avion);
                 if (leParking != nullptr) {
-                    // Créer trajectoire vers parking (simulée)
-                    std::vector<Position> versParking = { Position(100, 100, 0) };
+                    // Créer trajectoire vers parking (simulée simple)
+                    std::vector<Position> versParking = { Position(100, 100, 0) }; // Coordonnées parking fictives
                     avion.setTrajectoire(versParking);
                     twr.gererRoulage(&avion, leParking);
-                    twr.libererPiste(); // Important : libérer la piste APRÈS avoir dégagé
+
+                    // IMPORTANT : On libère la piste APRÈS avoir dégagé (ici simulé immédiatement pour simplifier)
+                    twr.libererPiste();
                 }
                 else {
-                    // Pas de parking ? On libère quand même la piste et on despawn ou on attend
-                    twr.libererPiste();
+                    // Pas de parking dispo, on attend sur la piste (bloque tout) ou on despawn
+                    std::cout << ">>> " << avion.getNom() << " Bloqué sur piste (Pas de parking).\n";
+                    twr.libererPiste(); // On libère quand même pour pas casser la simu
                 }
             }
         }
@@ -102,37 +118,50 @@ void routine_avion(Avion& avion, APP& app, TWR& twr) {
             // Demande de départ
             twr.enregistrerPourDecollage(&avion);
 
+            // Libère parking
             if (avion.getParking()) {
                 avion.getParking()->liberer();
+                // On garde la ref du parking un instant pour la logique de priorité TWR si besoin
+                // Mais ici on le set à nullptr
                 avion.setParking(nullptr);
             }
 
-            // Roulage vers la piste
+            // Roulage vers la piste (Trajectoire fictive)
             std::vector<Position> versPiste = { Position(0,0,0) };
             avion.setTrajectoire(versPiste);
-            avion.setEtat(EtatAvion::EN_ATTENTE); // On roule vers l'attente
+            // On passe en EN_ATTENTE (roulage vers seuil de piste)
+            // La TWR passera l'état à DECOLLAGE quand la piste sera libre
+            avion.setEtat(EtatAvion::EN_ATTENTE);
 
-            std::cout << "--- " << avion.getNom() << " demande le roulage pour decollage.\n";
+            std::cout << "--- " << avion.getNom() << " commence le roulage vers la piste.\n";
         }
 
         // --- DECOLLAGE ---
         else if (etat == EtatAvion::DECOLLAGE) {
-            if (avion.getTrajectoire().empty()) {
-                std::vector<Position> montee = { Position(30000, 0, 10000) }; // On s'éloigne
+            // Si on vient de passer en décollage et qu'on a pas de traj de montée
+            if (avion.getTrajectoire().empty() || avion.getPosition().getAltitude() < 100) {
+                std::vector<Position> montee = { Position(40000, 0, 10000) }; // On repart loin
                 avion.setTrajectoire(montee);
             }
 
+            // Si on est assez haut/loin
             if (avion.getPosition().getAltitude() > 5000) {
                 twr.retirerAvionDeDecollage(&avion);
-                // Reset pour boucle infinie
-                avion.setPosition(Position(40000, 0, 10000));
+
+                // RESET pour boucle infinie du scénario
+                std::cout << ">>> " << avion.getNom() << " quitte la zone. (Reset Scenario)\n";
+
+                // On replace l'avion au début
+                avion.setPosition(Position(40000 + (rand() % 5000), 0, 10000));
                 std::vector<Position> retour = { Position(0,0,0) };
                 avion.setTrajectoire(retour);
                 avion.setEtat(EtatAvion::EN_ROUTE);
-                std::cout << ">>> " << avion.getNom() << " quitte la frequence (Reset).\n";
+
+                // Pause avant de revenir
+                simuler_pause(2000);
             }
         }
 
-        simuler_pause(50); // Tick rate de l'avion
+        simuler_pause(100); // Tick rate de l'avion (10Hz)
     }
 }
