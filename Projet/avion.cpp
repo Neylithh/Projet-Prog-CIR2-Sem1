@@ -1,13 +1,11 @@
-#include "avion.hpp"
+﻿#include "avion.hpp"
 
-// ================= CONSTRUCTEUR =================
 Avion::Avion(std::string n, float v, float vSol, float c, float conso, float dureeStat, Position pos)
     : nom_(n), vitesse_(v), vitesseSol_(vSol), carburant_(c), conso_(conso),
     dureeStationnement_(dureeStat), pos_(pos), etat_(EtatAvion::STATIONNE),
     parking_(nullptr), destination_(nullptr), typeUrgence_(TypeUrgence::AUCUNE) {
 }
 
-// ================= ACCESSEURS (LECTURE) : AVEC LOCK_GUARD =================
 std::string Avion::getNom() const {
     return nom_;
 }
@@ -72,7 +70,6 @@ const std::vector<Position> Avion::getTrajectoire() const {
     return trajectoire_;
 }
 
-// ================= SETTERS THREAD-SAFE =================
 void Avion::setPosition(const Position& p) {
     std::lock_guard<std::mutex> lock(mtx_);
     pos_ = p;
@@ -98,7 +95,6 @@ void Avion::setDestination(Aeroport* dest) {
     destination_ = dest;
 }
 
-// ================= LOGIQUE AVANCER =================
 void Avion::avancer(float dt) {
     std::lock_guard<std::mutex> lock(mtx_);
 
@@ -129,14 +125,12 @@ void Avion::avancer(float dt) {
     carburant_ -= conso_ * dt;
     if (carburant_ < 0) carburant_ = 0;
 
-    // Déclaration automatique d'urgence carburant
     if (carburant_ < 500 && typeUrgence_ == TypeUrgence::AUCUNE) {
         typeUrgence_ = TypeUrgence::CARBURANT;
         std::cout << "[AVION " << nom_ << "] MAYDAY : Urgence CARBURANT declaree !\n";
     }
 }
 
-// ================= LOGIQUE AVANCER SOL =================
 void Avion::avancerSol(float dt) {
     std::lock_guard<std::mutex> lock(mtx_);
 
@@ -152,7 +146,6 @@ void Avion::avancerSol(float dt) {
     if (dist <= distance_a_parcourir) {
         pos_ = cible;
         trajectoire_.erase(trajectoire_.begin());
-        //std::cout << "[AVION " << nom_ << "] Arrive a l'etape de roulage suivante.\n";
 
         if (trajectoire_.empty()) {
             if (etat_ == EtatAvion::ROULE_VERS_PISTE) {
@@ -162,11 +155,11 @@ void Avion::avancerSol(float dt) {
                     parking_->liberer();
                     parking_ = nullptr;
                 }
-                std::cout << ">>> [AVION " << nom_ << "] Arrive a la piste. Etat : EN_ATTENTE_PISTE.\n";
+                std::cout << "[AVION " << nom_ << "] Arrive a la piste. Etat : EN_ATTENTE_PISTE.\n";
             }
             else if (etat_ == EtatAvion::ROULE_VERS_PARKING) {
                 etat_ = EtatAvion::STATIONNE;
-                std::cout << ">>> [AVION " << nom_ << "] Arrive au parking "
+                std::cout << "[AVION " << nom_ << "] Arrive au parking "
                     << (parking_ ? parking_->getNom() : "")
                     << ". Etat : STATIONNE. Fin du vol.\n";
             }
@@ -183,7 +176,6 @@ void Avion::avancerSol(float dt) {
         );
     }
 
-    // Consommation réduite au sol
     float consommationSol = conso_ * 0.05f;
     carburant_ -= consommationSol * dt;
     if (carburant_ < 0) {
@@ -191,7 +183,6 @@ void Avion::avancerSol(float dt) {
     }
 }
 
-// ================= DECLARER URGENCE =================
 void Avion::declarerUrgence(TypeUrgence type) {
     std::lock_guard<std::mutex> lock(mtx_);
     if (typeUrgence_ == TypeUrgence::AUCUNE) {
@@ -205,13 +196,12 @@ void Avion::declarerUrgence(TypeUrgence type) {
         }
         std::cout << "[AVION " << nom_ << "] MAYDAY : Urgence " << raison << " declaree !\n";
         std::stringstream ss;
-        ss << "Code 7700 (Urgence) : " << raison << " - Position " << pos_; // Utilise ta surcharge Position !
-        Logger::getInstance().log("AVION", "MAYDAY", ss.str());
+        ss << "Urgence déclarée : " << raison << " - Position " << pos_;
+        Logger::getInstance().log("AVION", "URGENCE", ss.str());
     }
 
 }
 
-// ================= MAINTENANCE =================
 void Avion::effectuerMaintenance() {
     std::lock_guard<std::mutex> lock(mtx_);
     carburant_ = 5000.0f;

@@ -1,15 +1,11 @@
 ﻿#include "avion.hpp"
 
-// ================= TWR =================
-
-// ================= TWR =================
-
 TWR::TWR(const std::vector<Parking>& parkings, Position posPiste, float tempsAtterrisageDecollage)
     : pisteLibre_(true),
     parkings_(parkings),
     posPiste_(posPiste),
     tempsAtterrissageDecollage_(tempsAtterrisageDecollage),
-    urgenceEnCours_(false) // <--- AJOUTER CETTE LIGNE OBLIGATOIREMENT
+    urgenceEnCours_(false) 
 {
 }
 
@@ -30,13 +26,10 @@ void TWR::reserverPiste() {
     pisteLibre_ = false;
 }
 
-// twr.cpp
 
 bool TWR::autoriserAtterrissage(Avion* avion) {
     std::lock_guard<std::mutex> lock(mutexTWR_);
 
-    // FIX: Check if parking is available BEFORE authorizing landing
-    // (Unless it's an emergency, in which case they land anyway)
     bool parkingDispo = false;
     for (const auto& p : parkings_) {
         if (!p.estOccupe()) {
@@ -45,7 +38,6 @@ bool TWR::autoriserAtterrissage(Avion* avion) {
         }
     }
 
-    // Only authorize if Piste is Free AND Parking is Available (or Urgency)
     if ((pisteLibre_ && parkingDispo) || avion->estEnUrgence()) {
         pisteLibre_ = false;
         std::cout << "[TWR] Atterrissage AUTORISE pour " << avion->getNom() << " (Piste reservee).\n";
@@ -53,9 +45,8 @@ bool TWR::autoriserAtterrissage(Avion* avion) {
         return true;
     }
 
-    // Optional: Log why it was refused
     if (!pisteLibre_) {
-        // std::cout << "[TWR] Refus atterrissage " << avion->getNom() << ": Piste occupee.\n";
+        std::cout << "[TWR] Refus atterrissage " << avion->getNom() << ": Piste occupee.\n";
     }
     else if (!parkingDispo) {
         std::cout << "[TWR] Refus d'atterrissage " << avion->getNom() << ": Parking COMPLET.\n";
@@ -83,7 +74,7 @@ void TWR::attribuerParking(Avion* avion, Parking* parking) {
         std::cout << "[TWR] L'avion en urgence est au parking. Reprise des decollages.\n";
     }
     std::stringstream ss;
-    ss << *avion << " bloqué au bloc " << parking->getNom();
+    ss << *avion << " bloque au bloc " << parking->getNom();
     Logger::getInstance().log("TWR", "Parking", ss.str());
 }
 
@@ -99,7 +90,6 @@ void TWR::gererRoulageVersParking(Avion* avion, Parking* parking) {
 
 void TWR::enregistrerPourDecollage(Avion* avion) {
     std::lock_guard<std::mutex> lock(mutexTWR_);
-    // Vérification pour éviter les doublons dans la file
     if (std::find(filePourDecollage_.begin(), filePourDecollage_.end(), avion) == filePourDecollage_.end()) {
         filePourDecollage_.push_back(avion);
         avion->setEtat(EtatAvion::EN_ATTENTE_DECOLLAGE);
@@ -113,29 +103,22 @@ Avion* TWR::choisirAvionPourDecollage() const {
 
     if (filePourDecollage_.empty()) return nullptr;
 
-    // 1. Vérifier si un avion attend DÉJÀ au seuil de piste (Priorité max)
     for (Avion* avion : filePourDecollage_) {
         if (avion->getEtat() == EtatAvion::EN_ATTENTE_PISTE) {
-            return avion; // On retourne celui-ci pour que routine_twr autorise le décollage
+            return avion;
         }
     }
 
-    // 2. Vérifier si un avion est EN TRAIN de rouler vers la piste
     for (Avion* avion : filePourDecollage_) {
         if (avion->getEtat() == EtatAvion::ROULE_VERS_PISTE) {
-            // S'il y en a un qui roule, ON BLOQUE tout départ du parking.
-            // On retourne nullptr car aucun avion n'est prêt à décoller immédiatement, 
-            // et on ne veut pas en lancer un nouveau.
             return nullptr;
         }
     }
 
-    // 3. Si personne n'est au seuil et personne ne roule, on sort un avion du parking
     Avion* prioritaire = nullptr;
     double maxDistance = -1.0;
 
     for (Avion* avion : filePourDecollage_) {
-        // On ne regarde que ceux qui sont statiques au parking
         if (avion->getEtat() == EtatAvion::EN_ATTENTE_DECOLLAGE) {
             Parking* parking = avion->getParking();
             if (parking) {
@@ -148,7 +131,6 @@ Avion* TWR::choisirAvionPourDecollage() const {
         }
     }
 
-    // Si on a trouvé un candidat au parking, on le fait bouger
     if (prioritaire) {
         std::vector<Position> cheminRoulage;
         cheminRoulage.push_back(posPiste_);
@@ -157,7 +139,6 @@ Avion* TWR::choisirAvionPourDecollage() const {
         prioritaire->setEtat(EtatAvion::ROULE_VERS_PISTE);
         std::cout << "[TWR] " << prioritaire->getNom() << " quitte le parking vers la piste (Distance: " << (int)maxDistance << "m).\n";
 
-        // On retourne nullptr car il n'est pas encore prêt à décoller (il doit rouler d'abord)
         return nullptr;
     }
 
@@ -168,14 +149,13 @@ bool TWR::autoriserDecollage(Avion* avion) {
     std::lock_guard<std::mutex> lock(mutexTWR_);
 
     if (urgenceEnCours_) {
-        std::cout << "[TWR] Decollage refuse pour " << avion->getNom() << " (Priorite à l'urgence).\n";
+        std::cout << "[TWR] Decollage refuse pour " << avion->getNom() << " (Priorite a l'urgence).\n";
         return false;
     }
 
     if (avion->getEtat() == EtatAvion::EN_ATTENTE_PISTE) {
-        std::cout << ">>> [TWR] Decollage AUTORISE pour " << avion->getNom() << ". Bon vol !\n";
+        std::cout << "[TWR] Decollage AUTORISE pour " << avion->getNom() << ". Bon vol !\n";
 
-        // Trajectoire de montée (tout droit, monte à 3000m)
         std::vector<Position> trajMontee;
         Position actuelle = avion->getPosition();
         trajMontee.push_back(Position(actuelle.getX(), actuelle.getY() + 10000, 5000));
@@ -184,7 +164,7 @@ bool TWR::autoriserDecollage(Avion* avion) {
         avion->setEtat(EtatAvion::DECOLLAGE);
 
         std::stringstream ss;
-        ss << "Décollage immédiat piste " << (int)posPiste_.getX() << " pour " << *avion;
+        ss << "Decollage immediat piste " << (int)posPiste_.getX() << " pour " << *avion;
         Logger::getInstance().log("TWR", "Decollage", ss.str());
 
         return true;
@@ -197,14 +177,11 @@ void TWR::retirerAvionDeDecollage(Avion* avion) {
 
     auto it = std::find(filePourDecollage_.begin(), filePourDecollage_.end(), avion);
 
-    // VERIFICATION ESSENTIELLE
     if (it != filePourDecollage_.end()) {
         filePourDecollage_.erase(it);
-        // Ne libérez la piste que si l'avion y était vraiment
         pisteLibre_ = true;
         std::cout << "[TWR] Piste liberee apres le decollage de " << avion->getNom() << ".\n";
     }
-    // Si l'avion n'est pas trouvé, on ne fait rien (évite le crash)
 }
 
 void TWR::setUrgenceEnCours(bool statut) {

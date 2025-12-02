@@ -15,7 +15,7 @@ private:
     std::mutex mutex_;
     bool premierElement_;
 
-    Logger(); // Privé
+    Logger();
     ~Logger();
 
 public:
@@ -27,7 +27,6 @@ public:
 };
 
 
-// Déclarations forward pour éviter les dépendances circulaires
 class Avion;
 class Parking;
 class TWR;
@@ -35,7 +34,6 @@ class APP;
 class CCR;
 struct Aeroport;
 
-// ================= POSITION =================
 class Position {
 private:
     double x_, y_, altitude_;
@@ -49,7 +47,6 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Position& pos);
 };
 
-// ================= ETATS AVION =================
 enum class EtatAvion {
     STATIONNE,
     EN_ATTENTE_DECOLLAGE,
@@ -71,7 +68,6 @@ enum class TypeUrgence {
     MEDICAL
 };
 
-// ================= PARKING =================
 class Parking {
 private:
     std::string nom_;
@@ -87,7 +83,6 @@ public:
     void liberer();
 };
 
-// ================= AVION =================
 class Avion {
 private:
     std::string nom_;
@@ -107,7 +102,6 @@ private:
 public:
     Avion(std::string n, float v, float vSol, float c, float conso, float dureeStat, Position pos);
 
-    // Getters Thread-Safe
     std::string getNom() const;
     float getVitesse() const;
     float getVitesseSol() const;
@@ -122,14 +116,12 @@ public:
     bool estEnUrgence() const;
     TypeUrgence getTypeUrgence() const;
 
-    // Setters Thread-Safe
     void setPosition(const Position& p);
     void setTrajectoire(const std::vector<Position>& traj);
     void setEtat(EtatAvion e);
     void setParking(Parking* p);
     void setDestination(Aeroport* dest);
 
-    // Mouvement et actions
     void declarerUrgence(TypeUrgence type);
     void avancer(float dt);
     void avancerSol(float dt);
@@ -137,7 +129,6 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Avion& avion);
 };
 
-// ================= TWR (TOUR DE CONTROLE) =================
 class TWR {
 private:
     float tempsAtterrissageDecollage_;
@@ -156,24 +147,20 @@ public:
     void libererPiste();
     void reserverPiste();
 
-    // Atterrissage
     bool autoriserAtterrissage(Avion* avion);
     Parking* choisirParkingLibre();
     void attribuerParking(Avion* avion, Parking* parking);
     void gererRoulageVersParking(Avion* avion, Parking* p);
 
-    // Décollage
     void enregistrerPourDecollage(Avion* avion);
     bool autoriserDecollage(Avion* avion);
     Avion* choisirAvionPourDecollage() const;
     void retirerAvionDeDecollage(Avion* avion);
 
-    // Urgence
     void setUrgenceEnCours(bool statut);
     bool estUrgenceEnCours() const;
 };
 
-// ================= APP (APPROCHE) =================
 class APP {
 private:
     std::vector<Avion*> avionsDansZone_;
@@ -193,7 +180,6 @@ public:
     size_t getNombreAvionsDansZone() const;
 };
 
-// ================= CCR (CENTRE DE CONTROLE REGIONAL) =================
 class CCR {
 private:
     std::vector<Avion*> avionsEnCroisiere_;
@@ -207,7 +193,6 @@ public:
     void transfererVersApproche(Avion* avion, APP* appCible);
 };
 
-// ================= AEROPORT =================
 struct Aeroport {
     std::string nom;
     Position position;

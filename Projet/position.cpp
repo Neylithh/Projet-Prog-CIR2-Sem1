@@ -1,6 +1,5 @@
 #include "avion.hpp"
 
-// ================= POSITION =================
 Position::Position(double x, double y, double z) : x_(x), y_(y), altitude_(z) {}
 double Position::getX() const { return x_; }
 double Position::getY() const { return y_; }

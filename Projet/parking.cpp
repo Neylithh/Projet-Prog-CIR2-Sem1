@@ -1,6 +1,5 @@
 #include "avion.hpp"
 
-// ================= PARKING =================
 Parking::Parking(const std::string& nom, Position pos)
     : nom_(nom), pos_(pos), occupe_(false) {
 }
