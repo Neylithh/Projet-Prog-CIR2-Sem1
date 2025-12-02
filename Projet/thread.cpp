@@ -2,7 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <random>
-#define PROBA_URGENCE 1500
+#define PROBA_URGENCE 1000
 
 void simuler_pause(int ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
