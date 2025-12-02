@@ -27,8 +27,12 @@ add_executable(Simulateur
     "Projet/thread.cpp"
     "Projet/avion.hpp"
     "Projet/thread.hpp"
- "Projet/position.cpp" "Projet/parking.cpp" "Projet/twr.cpp" "Projet/app.cpp" "Projet/ccr.cpp"  "Projet/communication.cpp")
-
+    "Projet/position.cpp" 
+    "Projet/parking.cpp" 
+    "Projet/twr.cpp" 
+    "Projet/app.cpp" 
+    "Projet/ccr.cpp"  
+    "Projet/communication.cpp")
 # --- 4. LIENS (LINKING) ---
 target_link_libraries(Simulateur PRIVATE 
     SFML::Graphics 
