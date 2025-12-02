@@ -228,9 +228,4 @@ int main() {
     // pendant la fermeture, ce qui causerait un autre crash de fermeture.
     
     return 0;
-<<<<<<< HEAD
 }
-// test
-=======
-}
->>>>>>> f79601c (Debut sfml)
