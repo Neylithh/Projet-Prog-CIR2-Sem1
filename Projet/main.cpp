@@ -3,92 +3,234 @@
 #include <thread>
 #include <chrono>
 #include <string>
+#include <cmath>
+#include <mutex>
+#include <optional> 
+
+// SFML 3.0 Includes
+#include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
+#include <SFML/System.hpp>
 
 #include "avion.hpp"
 #include "thread.hpp"
 
-// Vecteur global pour garder une trace des threads (pour join ‡ la fin si besoin)
-std::vector<std::thread> threads_infra;
+// ================= CONSTANTES VISUELLES =================
+const int WINDOW_WIDTH = 10000;
+const int WINDOW_HEIGHT = 10000 ;
+const float PI = 3.14159265f;
 
+// Facteurs d'√©chelle (Vos coordonn√©es vont de 0 √† ~300000 en X)
+const double SCALE_X = (double)WINDOW_WIDTH / 500000.0;
+const double SCALE_Y = (double)WINDOW_HEIGHT / 400000.0;
+
+// ================= OUTILS GRAPHIQUES =================
+sf::Vector2f worldToScreen(const Position& pos) {
+    float x = static_cast<float>(pos.getX() * SCALE_X) + 50.f;
+    float y = static_cast<float>(pos.getY() * SCALE_Y) + 50.f;
+    return sf::Vector2f(x, y);
+}
+
+// ================= GLOBALES =================
+std::vector<std::thread> threads_infra;
+std::vector<Avion*> flotte;
+std::mutex mutexFlotte; 
+
+// ================= MAIN =================
 int main() {
     std::srand(static_cast<unsigned int>(time(NULL)));
 
-    std::cout << "===============================================\n";
-    std::cout << "   SIMULATEUR CONTROLE AERIEN (MULTI-THREAD)   \n";
-    std::cout << "===============================================\n";
+    std::cout << "[INFO] D√©marrage du simulateur SFML 3.0..." << std::endl;
 
-    // 1. CrÈation de l'infrastructure
+    // --- 1. CONFIGURATION SFML ---
+    sf::RenderWindow window(sf::VideoMode({(unsigned int)WINDOW_WIDTH, (unsigned int)WINDOW_HEIGHT}), "Simulateur ATC");
+    window.setFramerateLimit(60);
+
+    // Chargement des textures (chemins relatifs)
+    sf::Texture textureAvion, textureFond;
+    bool hasTextureAvion = textureAvion.loadFromFile("img/avion.png");
+    bool hasTextureMap = textureFond.loadFromFile("img/carte.jpg"); 
+
+    // Sprite de fond
+    sf::Sprite spriteFond(textureFond);
+    if (hasTextureMap) {
+        sf::Vector2u sizeFond = textureFond.getSize();
+        if (sizeFond.x > 0) {
+            spriteFond.setScale({
+                (float)WINDOW_WIDTH / sizeFond.x,
+                (float)WINDOW_HEIGHT / sizeFond.y
+            });
+        }
+    }
+
+    // --- 2. CREATION INFRASTRUCTURE ---
     CCR ccr;
+    // Les a√©roports sont cr√©√©s sur la pile du main, ils vivent jusqu'√† la fin du programme
+    Aeroport cdg("CDG", Position(110000, 30000, 0));
+    Aeroport ory("ORY", Position(80000, -35000, 0));
+    Aeroport lil("LIL", Position(182000, 345000, 0));
+    Aeroport sxb("SXB", Position(830000, -60000, 0));
+    Aeroport lys("LYS", Position(480000, -650000, 0));
+    Aeroport nce("NCE", Position(838000, -1070000, 0));
+    Aeroport mrs("MRS", Position(515000, -1160000, 0));
+    Aeroport tls("TLS", Position(-62000, -1116000, 0));
+    Aeroport bod("BOD", Position(-356000, -860000, 0));
+    Aeroport nte("NTE", Position(-500000, -350000, 0));
+    Aeroport bes("BES", Position(-855000, -65000, 0)); 
 
-    Aeroport lille("Lille-Lesquin", Position(0, 0, 0), 20000.0f);
-    Aeroport paris("Paris-CDG", Position(90000, 50000, 0), 20000.0f);
-    Aeroport marseille("Marseille", Position(300000, 70000, 0), 20000.0f);
-
-    // 2. Lancement des Threads d'infrastructure
+    // --- 3. LANCEMENT DES THREADS INFRA ---
+    // Attention : on passe par r√©f√©rence car ccr/lille vivent dans le main
     threads_infra.emplace_back(routine_ccr, std::ref(ccr));
-    threads_infra.emplace_back(routine_twr, std::ref(*lille.twr));
-    threads_infra.emplace_back(routine_app, std::ref(*lille.app));
-    std::cout << "[INIT] Aeroport " << lille.nom << " operationnel (TWR + APP).\n";
-    threads_infra.emplace_back(routine_twr, std::ref(*paris.twr));
-    threads_infra.emplace_back(routine_app, std::ref(*paris.app));
-    std::cout << "[INIT] Aeroport " << paris.nom << " operationnel (TWR + APP).\n";
-    threads_infra.emplace_back(routine_twr, std::ref(*marseille.twr));
-    threads_infra.emplace_back(routine_app, std::ref(*marseille.app));
-    std::cout << "[INIT] Aeroport " << marseille.nom << " operationnel (TWR + APP).\n";
+    threads_infra.emplace_back(routine_twr, std::ref(*lil.twr));
+    threads_infra.emplace_back(routine_app, std::ref(*lil.app));
+    threads_infra.emplace_back(routine_twr, std::ref(*cdg.twr));
+    threads_infra.emplace_back(routine_app, std::ref(*cdg.app));
+    threads_infra.emplace_back(routine_twr, std::ref(*mrs.twr));
+    threads_infra.emplace_back(routine_app, std::ref(*mrs.app));
 
-    // 3. Simulation du Trafic
-    std::cout << "[SYSTEM] Lancement du generateur de trafic...\n\n";
+    // --- 4. THREAD GENERATEUR DE TRAFIC ---
+    std::thread trafficGenerator([&]() {
+        // Liste locale pour le tirage al√©atoire
+        std::vector<Aeroport*> aeroports = { &lil, &cdg, &mrs };
+        int idAvion = 1;
 
-    int idAvion = 1;
-    std::vector<Avion*> flotte;
+        for (int i = 0; i < 6; ++i) { 
+            std::this_thread::sleep_for(std::chrono::seconds(2)); 
 
-    // Liste des aÈroports pour tirage alÈatoire
-    std::vector<Aeroport*> aeroports = { &lille, &paris, &marseille };
+            std::string nom = "AIRFRANCE-" + std::to_string(idAvion++);
+            
+            int idxDepart = std::rand() % aeroports.size();
+            int idxDest;
+            do { idxDest = std::rand() % aeroports.size(); } while (idxDest == idxDepart);
 
-    // GÈnÈrer 5 avions avec des dÈparts/destinations variÈs
-    for (int i = 0; i < 5; ++i) {
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // Pause plus courte
+            Aeroport* depart = aeroports[idxDepart];
+            Aeroport* destination = aeroports[idxDest];
 
-        std::string nom = "AIRFRANCE-" + std::to_string(idAvion++);
+            // Position d√©part d√©cal√©e
+            Position posDepart = depart->position;
+            posDepart.setPosition(posDepart.getX(), posDepart.getY() - 5000, 5000);
 
-        // Tirage alÈatoire dÈpart/destination diffÈrents
-        int idxDepart = std::rand() % aeroports.size();
-        int idxDest;
-        do {
-            idxDest = std::rand() % aeroports.size();
-        } while (idxDest == idxDepart);
+            // L'avion est allou√© dynamiquement (heap), il survit au thread
+            Avion* nouvelAvion = new Avion(nom, 500.f, 20.f, 5000.f, 2.f, 3000.f, posDepart);
+            nouvelAvion->setDestination(destination);
 
-        Aeroport* depart = aeroports[idxDepart];
-        Aeroport* destination = aeroports[idxDest];
+            ccr.prendreEnCharge(nouvelAvion);
 
-        // Position de dÈpart : en l'air, dÈcalÈe de l'aÈroport de dÈpart
-        Position posDepart = depart->position;
-        posDepart.setPosition(posDepart.getX(), posDepart.getY() - 5000, 10000);
+            // CORRECTION CRITIQUE ICI : "aeroports" est pass√© par COPIE (pas de std::ref)
+            // car le vecteur local va √™tre d√©truit √† la fin de la lambda.
+            std::thread tPilote(routine_avion, 
+                std::ref(*nouvelAvion), 
+                std::ref(*depart), 
+                std::ref(*destination), 
+                std::ref(ccr), 
+                aeroports // <--- PASSER PAR VALEUR (COPIE)
+            );
+            tPilote.detach();
 
-        // Utilisation du constructeur complet
-        Avion* nouvelAvion = new Avion(nom, 400.f, 10.f, 10000.f, 2.f, 5000.f, posDepart);
-        nouvelAvion->setDestination(destination);
+            // Ajout thread-safe √† la flotte pour l'affichage
+            {
+                std::lock_guard<std::mutex> lock(mutexFlotte);
+                flotte.push_back(nouvelAvion);
+            }
+        }
+    });
+    trafficGenerator.detach();
 
-        flotte.push_back(nouvelAvion);
+    // --- 5. BOUCLE D'AFFICHAGE ---
+    while (window.isOpen()) {
+        while (const std::optional event = window.pollEvent()) {
+            if (event->is<sf::Event::Closed>()) {
+                window.close();
+            }
+            else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+                if (keyPressed->code == sf::Keyboard::Key::Escape)
+                    window.close();
+            }
+        }
 
-        ccr.prendreEnCharge(nouvelAvion);
+        window.clear(sf::Color(30, 30, 30)); 
 
-        std::thread tPilote(routine_avion, std::ref(*nouvelAvion), std::ref(*depart), std::ref(*destination), std::ref(ccr), std::ref(aeroports));
-        tPilote.detach();
+        if (hasTextureMap) window.draw(spriteFond);
 
-        double dist = nouvelAvion->getPosition().distance(destination->position);
+        // Dessin A√©roports
+        std::vector<Aeroport*> listAero = { &lil, &cdg, &mrs };
+        for (auto aero : listAero) {
+            sf::Vector2f p = worldToScreen(aero->position);
+            
+            sf::CircleShape point(5.f);
+            point.setFillColor(sf::Color::Red);
+            point.setOrigin({5.f, 5.f});
+            point.setPosition(p);
+            window.draw(point);
+
+            sf::CircleShape zone(50.f); 
+            zone.setFillColor(sf::Color(255, 0, 0, 30)); 
+            zone.setOutlineColor(sf::Color::Red);
+            zone.setOutlineThickness(1.f);
+            zone.setOrigin({50.f, 50.f});
+            zone.setPosition(p);
+            window.draw(zone);
+        }
+
+        // Dessin Avions (Section Critique)
+        {
+            std::lock_guard<std::mutex> lock(mutexFlotte); 
+            
+            for (auto avion : flotte) {
+                // S√©curit√© anti-crash : v√©rifier pointeur null
+                if (avion == nullptr) continue;
+                if (avion->getEtat() == EtatAvion::TERMINE) continue;
+
+                Position pos = avion->getPosition();
+                sf::Vector2f screenPos = worldToScreen(pos);
+                float angle = 0.f;
+
+                std::vector<Position> traj = avion->getTrajectoire();
+                if (!traj.empty()) {
+                    double dx = traj.front().getX() - pos.getX();
+                    double dy = traj.front().getY() - pos.getY();
+                    angle = (float)(std::atan2(dy, dx) * 180.0 / PI);
+                }
+
+                if (hasTextureAvion) {
+                    sf::Sprite spriteAvion(textureAvion);
+                    spriteAvion.setRotation(sf::degrees(angle + 90.f)); 
+                    spriteAvion.setScale({0.05f, 0.05f}); 
+                    sf::Vector2u size = textureAvion.getSize();
+                    spriteAvion.setOrigin({(float)size.x / 2.f, (float)size.y / 2.f});
+                    spriteAvion.setPosition(screenPos);
+                    
+                    if (avion->estEnUrgence()) {
+                        spriteAvion.setColor(sf::Color::Red);
+                    }
+                    window.draw(spriteAvion);
+                } else {
+                    sf::ConvexShape triangle;
+                    triangle.setPointCount(3);
+                    triangle.setPoint(0, {10.f, 0.f});
+                    triangle.setPoint(1, {-5.f, 5.f});
+                    triangle.setPoint(2, {-5.f, -5.f});
+                    triangle.setFillColor(avion->estEnUrgence() ? sf::Color::Red : sf::Color::Cyan);
+                    triangle.setPosition(screenPos);
+                    triangle.setRotation(sf::degrees(angle));
+                    window.draw(triangle);
+                }
+            }
+        }
+
+        window.display();
     }
 
-    // Attente de la fin des threads d'infrastructure si besoin
-    for (auto& t : threads_infra) {
-        if (t.joinable()) t.join();
-    }
-
-    // LibÈration mÈmoire des avions
-    for (auto avion : flotte) {
-        delete avion;
-    }
-
+    // Nettoyage final
+    // Note : Dans une vraie app, il faudrait arr√™ter les threads proprement avant de delete.
+    // Ici on quitte le main, l'OS nettoiera la m√©moire restante.
+    // On √©vite le delete manuel ici car les threads peuvent encore essayer d'acc√©der aux avions
+    // pendant la fermeture, ce qui causerait un autre crash de fermeture.
+    
     return 0;
+<<<<<<< HEAD
 }
 // test
+=======
+}
+>>>>>>> f79601c (Debut sfml)
