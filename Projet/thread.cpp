@@ -1,32 +1,45 @@
 #include "thread.hpp"
-#include <iostream> // Nécessaire pour les cout
+#include <iostream>
+#include <chrono>
+#include <random>
+
 
 void simuler_pause(int ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-// =========================================================
-// C'EST CETTE FONCTION QUI MANQUAIT A L'APPEL (L'erreur VCR001)
-// =========================================================
+// --- ROUTINE CCR ---
 void routine_ccr(CCR& ccr) {
     while (true) {
-        // Le cerveau global surveille l'espace aérien en continu
         ccr.gererEspaceAerien();
-        simuler_pause(500); // Vérification toutes les 0.5 secondes
+        simuler_pause(500);
     }
 }
 
-// --- ROUTINE TWR ---
+// --- ROUTINE TWR (CORRIGEE) ---
 void routine_twr(TWR& twr) {
     while (true) {
         simuler_pause(500);
 
-        // La tour gère les décollages si la piste est libre
-        if (twr.estPisteLibre()) {
-            Avion* avion = twr.choisirAvionPourDecollage();
-            // On vérifie que l'avion est bien en attente au seuil de piste
-            if (avion && avion->getEtat() == EtatAvion::EN_ATTENTE_DECOLLAGE) {
-                twr.autoriserDecollage(avion);
+        Avion* avionPret = twr.choisirAvionPourDecollage();
+
+        if (avionPret != nullptr) {
+            // On ne tente le décollage que si la piste est libre ET pas d'urgence
+            if (twr.estPisteLibre() && !twr.estUrgenceEnCours()) {
+
+                // 1. On réserve la piste
+                twr.reserverPiste();
+
+                // 2. On tente d'autoriser le décollage
+                if (twr.autoriserDecollage(avionPret)) {
+                    // SUCCES : L'avion passe en état DECOLLAGE, la piste reste réservée 
+                    // jusqu'à ce qu'il soit assez haut (géré par retirerAvionDeDecollage)
+                }
+                else {
+                    // ECHEC : Si le décollage est refusé (ex: urgence apparue entre temps),
+                    // IL FAUT LIBERER LA PISTE IMMÉDIATEMENT !
+                    twr.libererPiste();
+                }
             }
         }
     }
@@ -35,136 +48,151 @@ void routine_twr(TWR& twr) {
 // --- ROUTINE APP ---
 void routine_app(APP& app) {
     while (true) {
-        // L'approche met à jour les avions dans sa zone (carburant, trajectoires)
         app.mettreAJour();
-        simuler_pause(200);
+        simuler_pause(500);
     }
 }
 
-// --- ROUTINE AVION (PILOTE AUTOMATIQUE COMPLET) ---
-void routine_avion(Avion& avion, Aeroport& depart, Aeroport& arrivee, CCR& ccr) {
+// DANS thread.cpp
 
-    // On définit la destination dans l'ordinateur de bord
-    avion.setDestination(&arrivee);
+void routine_avion(Avion& avion, Aeroport& depart, Aeroport& arrivee, CCR& ccr, std::vector<Aeroport*> aeroports) {
 
-    // 1. Initialisation au sol : Demande de parking à l'aéroport de départ
-    Parking* pDepart = depart.twr->attribuerParking(&avion);
-    if (!pDepart) {
-        // Si l'aéroport est plein à craquer, le vol est annulé
-        // (Peu probable au démarrage mais bonne pratique)
-        avion.setEtat(EtatAvion::TERMINE);
-        return;
-    }
+    // On utilise des pointeurs dynamiques pour pouvoir échanger départ et arrivée
+    Aeroport* aeroDepart = &depart;
+    Aeroport* aeroArrivee = &arrivee;
 
-    // Simulation de l'embarquement passagers
-    simuler_pause(2000);
+    // On récupère les contrôleurs de l'aéroport d'arrivée actuel
+    APP* appArrivee = aeroArrivee->app;
+    TWR* twrArrivee = aeroArrivee->twr;
+
+    float dt = 1.f;
 
     while (avion.getEtat() != EtatAvion::TERMINE) {
+
         EtatAvion etat = avion.getEtat();
 
-        // --- PHASE 1 : AU SOL (DEPART) ---
-        if (etat == EtatAvion::STATIONNE) {
-            // Le pilote demande l'autorisation de mise en route
-            depart.twr->enregistrerPourDecollage(&avion);
-
-            // On libère le parking
-            if (avion.getParking()) {
-                avion.getParking()->liberer();
-                avion.setParking(nullptr);
-            }
-
-            // Roulage vers la piste (Trajectoire fictive simple)
-            std::vector<Position> taxi = { depart.position };
-            avion.setTrajectoire(taxi);
-
-            // Temps de roulage
-            simuler_pause(1000);
-
-            // Arrivée au seuil de piste, prêt au départ
-            avion.setEtat(EtatAvion::EN_ATTENTE_DECOLLAGE);
+        // --- 1. MOUVEMENT ---
+        if (etat == EtatAvion::ROULE_VERS_PARKING || etat == EtatAvion::ROULE_VERS_PISTE) {
+            avion.avancerSol(dt);
         }
-
-        // --- PHASE 2 : DECOLLAGE ET MONTEE ---
-        else if (etat == EtatAvion::DECOLLAGE) {
-            // Si on n'a pas de trajectoire de montée, on en crée une (vers 8000m)
-            if (avion.getTrajectoire().empty()) {
-                Position cible = avion.getPosition();
-                cible.setPosition(cible.getX(), cible.getY(), 8000);
-                std::vector<Position> montee = { cible };
-                avion.setTrajectoire(montee);
-            }
-
-            // Une fois une certaine altitude atteinte (5000m), on passe sur la fréquence régionale (CCR)
-            if (avion.getPosition().getAltitude() > 5000) {
-                // La tour nous oublie
-                depart.twr->retirerAvionDeDecollage(&avion);
-
-                // Le CCR nous prend en charge
-                ccr.prendreEnCharge(&avion);
-
-                // On met le cap direct sur l'aéroport d'arrivée
-                std::vector<Position> route = { arrivee.position };
-                avion.setTrajectoire(route);
-            }
-        }
-
-        // --- PHASE 3 : CROISIERE (Géré par CCR) ---
-        else if (etat == EtatAvion::EN_ROUTE) {
-            // On calcule la distance restante
-            float dist = avion.getPosition().distance(arrivee.position);
-
-            // Si on est à moins de 20km (20000 unités), on contacte l'Approche (APP)
-            if (dist < 20000) {
-                ccr.transfererVersApproche(&avion, arrivee.app);
-                // Note : Cette fonction change l'état de l'avion en EN_APPROCHE
-            }
-        }
-
-        // --- PHASE 4 : APPROCHE (Géré par APP) ---
-        else if (etat == EtatAvion::EN_APPROCHE) {
-            // Si on a fini les vecteurs d'approche, on demande la finale (atterrissage)
-            if (avion.getTrajectoire().empty()) {
-                bool autorise = arrivee.app->demanderAutorisationAtterrissage(&avion);
-                if (!autorise) {
-                    simuler_pause(1000); // On fait un tour d'attente si refusé
-                }
-            }
-        }
-
-        // --- PHASE 5 : ATTERRISSAGE ET ARRRET ---
-        else if (etat == EtatAvion::ATTERRISSAGE) {
-            // Si on touche le sol (Altitude proche de 0)
-            if (avion.getPosition().getAltitude() <= 10.0f) {
-
-                // On demande un parking à l'arrivée
-                Parking* pArrivee = arrivee.twr->attribuerParking(&avion);
-
-                if (pArrivee) {
-                    // On libère la piste immédiatement
-                    arrivee.twr->libererPiste();
-                    arrivee.twr->gererRoulageAuSol(&avion, pArrivee);
-
-                    simuler_pause(1000); // Temps de roulage vers le gate
-
-                    avion.setEtat(EtatAvion::TERMINE);
-                }
-                else {
-                    // Cas critique : piste libérée mais pas de parking (évacuation)
-                    arrivee.twr->libererPiste();
-                    avion.setEtat(EtatAvion::TERMINE);
-                }
-            }
-        }
-
-        // --- MOTEUR PHYSIQUE ---
-        // Tant que le vol n'est pas fini et qu'on n'attend pas au sol
-        if (etat != EtatAvion::TERMINE && etat != EtatAvion::EN_ATTENTE_DECOLLAGE && etat != EtatAvion::STATIONNE) {
-            // On va plus vite en croisière (x3) pour ne pas attendre 10 ans devant l'écran
-            float dt = (etat == EtatAvion::EN_ROUTE) ? 3.0f : 0.8f;
+        else if (etat != EtatAvion::STATIONNE && etat != EtatAvion::EN_ATTENTE_DECOLLAGE && etat != EtatAvion::EN_ATTENTE_PISTE) {
             avion.avancer(dt);
         }
 
-        // Tick rate du pilote (réflexes)
-        simuler_pause(100);
+        // --- 2. TRANSITIONS D'ETATS ---
+
+        // A. ARRIVÉE ZONE APPROCHE
+        if (etat == EtatAvion::EN_APPROCHE) {
+            if (avion.getTrajectoire().empty()) {
+                bool autorise = appArrivee->demanderAutorisationAtterrissage(&avion);
+                if (!autorise) appArrivee->mettreEnAttente(&avion);
+            }
+        }
+
+        // B. ATTERRISSAGE
+        else if (etat == EtatAvion::ATTERRISSAGE) {
+            if (avion.getTrajectoire().empty()) {
+                Parking* p = twrArrivee->choisirParkingLibre();
+
+                if (p) {
+                    p->occuper();
+                    twrArrivee->attribuerParking(&avion, p);
+                    twrArrivee->gererRoulageVersParking(&avion, p);
+                    twrArrivee->libererPiste();
+                }
+                else {
+                    // --- AJOUT DE SECURITÉ ---
+                    // Si on a atterri mais pas de parking, on ne peut pas rester sur la piste !
+                    // On libère la piste pour ne pas bloquer tout l'aéroport.
+                    std::cout << "[TWR] " << avion.getNom() << " bloque la piste (Pas de parking). Evacuation des passagers et annulation du vol.\n";
+                    twrArrivee->libererPiste();
+
+                    // On force l'avion à disparaître ou à attendre hors piste
+                    simuler_pause(3000); // temps que les passagers descendent
+                    avion.setEtat(EtatAvion::TERMINE);
+                }
+            }
+        }
+
+        // C. STATIONNEMENT -> PRÉPARATION AU RETOUR
+        else if (etat == EtatAvion::STATIONNE) {
+
+            simuler_pause(3000);
+            if (avion.estEnUrgence()) {
+                if (avion.getTypeUrgence() == TypeUrgence::PANNE_MOTEUR) {
+                    Logger::getInstance().log("MAINTENANCE", "Reparation", "Moteur en cours de réparation sur " + avion.getNom());
+                    simuler_pause(5000);
+                }
+                else if (avion.getTypeUrgence() == TypeUrgence::MEDICAL) {
+                    Logger::getInstance().log("MAINTENANCE", "Evacuation", "Passager malade débarqué de " + avion.getNom());
+                    simuler_pause(2000);
+                }
+            }
+            avion.effectuerMaintenance();
+
+            // --- CHANGEMENT DE DESTINATION ICI ---
+            Aeroport* nouvelleDestination = aeroArrivee;
+            do {
+                int idx = std::rand() % aeroports.size();
+                nouvelleDestination = aeroports[idx];
+            } while (nouvelleDestination == aeroArrivee);
+
+            aeroDepart = aeroArrivee;
+            aeroArrivee = nouvelleDestination;
+
+            // Mise à jour des contrôleurs locaux pour la nouvelle destination
+            appArrivee = aeroArrivee->app;
+
+            // Note: Pour le décollage, on parle encore à la TWR où on est garé (aeroDepart désormais)
+            TWR* twrActuelle = aeroDepart->twr;
+
+            avion.setDestination(aeroArrivee); // On vise le nouvel aéroport
+            std::cout << "[AVION] " << avion.getNom() << " : Nouveau plan de vol vers " << aeroArrivee->nom << ".\n";
+
+            // On demande le décollage à la tour actuelle
+            twrActuelle->enregistrerPourDecollage(&avion);
+
+            // Attente passive
+            while (avion.getEtat() == EtatAvion::EN_ATTENTE_DECOLLAGE) {
+                simuler_pause(200);
+            }
+        }
+
+        // D. DECOLLAGE -> RETOUR EN CROISIERE (BOUCLE)
+        // ... Bloc DECOLLAGE ...
+        else if (etat == EtatAvion::DECOLLAGE) {
+            // On parle à la tour de DEPART (où on vient de décoller)
+            TWR* twrActuelle = aeroDepart->twr;
+
+            if (avion.getPosition().getAltitude() > 2000) {
+                // C'est ici qu'on retire l'avion de la liste de décollage
+                twrActuelle->retirerAvionDeDecollage(&avion);
+
+                std::cout << "[AVION] " << avion.getNom() << " quitte la zone et passe en CROISIERE.\n";
+
+                ccr.prendreEnCharge(&avion);
+
+                // --- CORRECTION IMPORTANTE ---
+                // On met à jour le pointeur pour le PROCHAIN atterrissage
+                // Sinon, au prochain tour de boucle, on contactera la mauvaise tour
+                twrArrivee = aeroArrivee->twr;
+                appArrivee = aeroArrivee->app; // On met aussi à jour l'APP par sécurité
+                // -----------------------------
+            }
+        }
+
+        // --- GESTION PANNES ---
+        if (etat == EtatAvion::EN_ROUTE || etat == EtatAvion::EN_APPROCHE) {
+            if (!avion.estEnUrgence() && (rand() % 1500 == 0)) {
+                if (rand() % 2 == 0) {
+                    avion.declarerUrgence(TypeUrgence::MEDICAL);
+                }
+                else {
+                    avion.declarerUrgence(TypeUrgence::PANNE_MOTEUR);
+                }
+            }
+        }
+
+        simuler_pause(75);
     }
 }

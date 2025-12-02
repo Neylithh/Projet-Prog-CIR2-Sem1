@@ -30,10 +30,9 @@ add_executable(Simulateur
     "Projet/main.cpp"
     "Projet/avion.cpp"
     "Projet/thread.cpp"
-    # C'est une bonne pratique d'ajouter les .hpp pour qu'ils apparaissent dans l'IDE
     "Projet/avion.hpp"
     "Projet/thread.hpp"
-)
+ "Projet/position.cpp" "Projet/parking.cpp" "Projet/twr.cpp" "Projet/app.cpp" "Projet/ccr.cpp"  "Projet/communication.cpp")
 
 # --- 5. LIENS (LINKING) ---
 target_link_libraries(Simulateur PRIVATE 
