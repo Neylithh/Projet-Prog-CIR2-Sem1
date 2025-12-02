@@ -67,7 +67,7 @@ void CCR::gererEspaceAerien() {
                 ss << "ALERTE SEPARATION : " << a1->getNom() << " <-> " << a2->getNom() << " (" << (int)dist << "m)";
                 Logger::getInstance().log("CCR", "ConflictAlert", ss.str());
 
-                std::cout << "!!! [CCR] ALERTE COLLISION IMMINENTE : " << a1->getNom() << " / " << a2->getNom() << "\n";
+                std::cout << "[CCR] ALERTE COLLISION IMMINENTE : " << a1->getNom() << " / " << a2->getNom() << ". Changement d'altitude pour l'un des avions.\n";
 
                 // Action corrective : On fait monter le premier avion de 500m
                 Position p = a1->getPosition();
