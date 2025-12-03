@@ -97,13 +97,13 @@ int main() {
 
     // --- 3. CREATION INFRASTRUCTURE ---
     CCR ccr;
-    Aeroport cdg("Paris", Position(0, 0, 0), 20000.0f);
+    Aeroport cdg("Paris", Position(0, 0, 0), 80000.0f);
     //Aeroport ory("ORY", Position(-5000, -35000, 0), 20000.0f);
-    Aeroport lil("Lille", Position(93000, 331000, 0), 20000.0f);
+    Aeroport lil("Lille", Position(93000, 331000, 0), 80000.0f);
     //Aeroport sxb("SXB", Position(550000, -30000, 0), 20000.0f);
     //Aeroport lys("LYS", Position(345000, -540000, 0), 20000.0f);
     //Aeroport nce("NCE", Position(675000, -900000, 0), 20000.0f);
-    Aeroport mrs("Marseille", Position(432000, -785000, 0), 20000.0f);
+    Aeroport mrs("Marseille", Position(432000, -785000, 0), 80000.0f);
     //Aeroport tls("TLS", Position(-60000, -810000, 0), 20000.0f);
     //Aeroport bod("BOD", Position(-300000, -675000, 0), 20000.0f);
     //Aeroport nte("NTE", Position(-390000, -345000, 0), 20000.0f);
@@ -136,7 +136,7 @@ int main() {
             Position posDepart = depart->position;
             posDepart.setPosition(posDepart.getX(), posDepart.getY() - 5000, 10000);
 
-            Avion* nouvelAvion = new Avion(nom, 2000.f, 5.f, 5000.f, 2.f, 5000.f, posDepart);
+            Avion* nouvelAvion = new Avion(nom, 4000.f, 5.f, 5000.f, 2.f, 5000.f, posDepart);
             nouvelAvion->setDestination(destination);
 
             ccr.prendreEnCharge(nouvelAvion);
@@ -244,12 +244,12 @@ int main() {
                 point.setOrigin({ 5.f, 5.f }); // Accolades
                 point.setPosition(p);
                 window.draw(point);
-
-                sf::CircleShape zone(30.f);
+                float rayonVisuel = aero->rayonControle * ECHELLE;
+                sf::CircleShape zone(rayonVisuel);
                 zone.setFillColor(sf::Color(255, 0, 0, 30));
                 zone.setOutlineColor(sf::Color::Red);
                 zone.setOutlineThickness(1.f);
-                zone.setOrigin({ 30.f, 30.f }); // Accolades
+                zone.setOrigin({ rayonVisuel, rayonVisuel });
                 zone.setPosition(p);
                 window.draw(zone);
 
@@ -337,6 +337,21 @@ int main() {
                             ss << "Urgence de type : Médicale";
                         }
                     }
+                    std::string etatStr = "INCONNU";
+                    switch (avion->getEtat()) {
+                    case EtatAvion::STATIONNE:              etatStr = "Stationne"; break;
+                    case EtatAvion::EN_ATTENTE_DECOLLAGE:   etatStr = "Attente Decollage"; break;
+                    case EtatAvion::ROULE_VERS_PISTE:       etatStr = "Roule vers la piste"; break;
+                    case EtatAvion::EN_ATTENTE_PISTE:       etatStr = "En attente au seuil de la piste"; break;
+                    case EtatAvion::DECOLLAGE:              etatStr = "Decollage"; break;
+                    case EtatAvion::EN_ROUTE:               etatStr = "En Croisiere"; break;
+                    case EtatAvion::EN_APPROCHE:            etatStr = "Approche"; break;
+                    case EtatAvion::EN_ATTENTE_ATTERRISSAGE:etatStr = "Circuit d'Attente"; break;
+                    case EtatAvion::ATTERRISSAGE:           etatStr = "Atterrissage"; break;
+                    case EtatAvion::ROULE_VERS_PARKING:     etatStr = "Taxi vers Parking"; break;
+                    case EtatAvion::TERMINE:                etatStr = "Termine"; break;
+                    }
+                    ss << "Etat: " << etatStr << "\n";
                     sf::Text text(font, ss.str(), 14);
                     text.setScale({ niveauZoomActuel, niveauZoomActuel });
                     // CORRECTION SFML 3 : Opération dans les accolades

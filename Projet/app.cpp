@@ -46,7 +46,7 @@ void APP::mettreEnAttente(Avion* avion) {
 
     std::vector<Position> cercle;
     Position centre = twr_->getPositionPiste();
-    float rayon = 5000.0f;
+    float rayon = avion->getDestination()->rayonControle/2.f;
     float altitudeAttente = 2000.0f; 
 
     for (int tour = 0; tour < 5; ++tour) {
