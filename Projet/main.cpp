@@ -87,8 +87,6 @@ int main() {
     bool hasFont = false;
     // Tente de charger Arial depuis Windows si le fichier local n'existe pas
     if (font.openFromFile("img/arial.ttf")) hasFont = true;
-    else if (font.openFromFile("C:/Windows/Fonts/arial.ttf")) hasFont = true;
-
     if (!hasFont) std::cerr << "[ERREUR] Police introuvable. Le texte sera absent.\n";
 
     // CORRECTION SFML 3 : Initialisation du Sprite avec la texture immédiatement
@@ -311,9 +309,10 @@ int main() {
                     infoBox.setPosition(boxPos);
                     window.draw(infoBox);
 
-                    std::stringstream ss;
+                    std::stringstream ss; 
                     ss << "VOL: " << avion->getNom() << "\n";
-                    ss << "Dest: " << (avion->getDestination() ? avion->getDestination()->nom : "N/A") << "\n";
+                    Aeroport* dest = avion->getDestination();
+                    ss << "Dest: " << (dest ? dest->nom : "N/A") << "\n";                    
                     ss << "Alt: " << (int)avion->getPosition().getAltitude() << " m\n";
                     ss << "Fuel: " << (int)avion->getCarburant() << " L\n";
                     float vitesseAffichee = 0.f;

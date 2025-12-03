@@ -1,0 +1,71 @@
+[
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-1  Carburant : 5000] pris en charge par la CCR, en destination de Lille"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-2  Carburant : 5000] pris en charge par la CCR, en destination de Marseille"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-3  Carburant : 5000] pris en charge par la CCR, en destination de Paris"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-4  Carburant : 5000] pris en charge par la CCR, en destination de Lille"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-5  Carburant : 5000] pris en charge par la CCR, en destination de Lille"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Collision",
+    "Details": "Séparation des avions pour éviter une collision : AF-3 - AF-4"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-3  Carburant : 4674] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-3  Carburant : 4674] vers l'APP"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Autorisation atterrissage",
+    "Details": "Autorisation d'atterrir pour [AF-3  Carburant : 4656]"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Parking",
+    "Details": "[AF-3  Carburant : 4654] bloque au bloc Paris-G1"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-4  Carburant : 4660] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-4  Carburant : 4660] vers l'APP"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Autorisation atterrissage",
+    "Details": "Autorisation d'atterrir pour [AF-4  Carburant : 4642]"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Parking",
+    "Details": "[AF-4  Carburant : 4640] bloque au bloc Lille-G1"
+  }

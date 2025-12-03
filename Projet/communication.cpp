@@ -1,4 +1,5 @@
 ﻿#include "avion.hpp"
+#include <filesystem>
 
 std::ostream& operator<<(std::ostream& os, const Position& pos) {
     os << "(" << (int)pos.x_ << ", " << (int)pos.y_ << ", Alt:" << (int)pos.altitude_ << ")";
@@ -11,9 +12,15 @@ std::ostream& operator<<(std::ostream& os, const Avion& avion) {
 }
 
 Logger::Logger() : premierElement_(true) {
-    fichier_.open("logs.json");
+    std::filesystem::path cheminFichierSource = __FILE__;
+    std::filesystem::path dossierProjet = cheminFichierSource.parent_path();
+    std::filesystem::path cheminLog = dossierProjet / "img" / "logs.json";
+    fichier_.open(cheminLog);
     if (fichier_.is_open()) {
         fichier_ << "[\n";
+    }
+    else {
+        std::cerr << "Impossible de creer img/logs.json\n";
     }
 }
 
