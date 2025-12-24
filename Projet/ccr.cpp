@@ -91,36 +91,10 @@ void CCR::gererEspaceAerien() {
         if (distanceRestante <= destination->rayonControle) {
             APP* appCible = destination->app;
 
-            if (appCible->getNombreAvionsDansZone() < 5) { // on dit maximum 5 avion dans la zone de l'APP par défaut pour être un peu réaliste
-                it = avionsEnCroisiere_.erase(it);
-                transfererVersApproche(avion, appCible);
-            }
-            else {
-                if (avion->getTrajectoire().size() < 10) {
-
-                    std::cout << "[CCR] Maintien " << avion->getNom() << " en circuit d'attente (APP Sature).\n";
-
-                    std::vector<Position> cercleAttente;
-                    Position centre = destination->position;
-
-                    float rayon = destination->rayonControle + 2000.0f;
-                    float altitude = avion->getPosition().getAltitude();
-
-                    for (int angleDeg = 0; angleDeg < 360; angleDeg += 10) {
-                        float angleRad = angleDeg * (3.14159f / 180.0f);
-                        float x = centre.getX() + rayon * std::cos(angleRad);
-                        float y = centre.getY() + rayon * std::sin(angleRad);
-                        cercleAttente.push_back(Position(x, y, altitude));
-                    }
-
-                    avion->setTrajectoire(cercleAttente);
-
-                    std::stringstream ss;
-                    ss << "Mise en attente de " << *avion << " autour de l'APP " << destination->nom << " car il est sature";
-                    Logger::getInstance().log("CCR", "Mise en attente, APP saturé", ss.str());
-                }
-                ++it;
-            }
+            // Modification : Suppression du circuit d'attente CCR.
+            // On transfère systématiquement à l'APP quand l'avion est à portée.
+            it = avionsEnCroisiere_.erase(it);
+            transfererVersApproche(avion, appCible);
         }
         else {
             ++it;

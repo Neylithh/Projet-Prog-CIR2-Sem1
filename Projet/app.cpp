@@ -46,7 +46,9 @@ void APP::mettreEnAttente(Avion* avion) {
 
     std::vector<Position> cercle;
     Position centre = twr_->getPositionPiste();
-    float rayon = avion->getDestination()->rayonControle/2.f;
+    
+    // Modification : Le rayon du circuit d'attente correspond maintenant au rayon de contrôle de l'APP
+    float rayon = avion->getDestination()->rayonControle;
     float altitudeAttente = 2000.0f; 
 
     for (int tour = 0; tour < 5; ++tour) {
