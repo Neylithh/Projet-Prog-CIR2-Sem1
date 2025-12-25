@@ -97,7 +97,6 @@ void TWR::enregistrerPourDecollage(Avion* avion) {
     }
 }
 
-// --- CORRECTION MAJEURE ICI ---
 Avion* TWR::choisirAvionPourDecollage() const {
     std::lock_guard<std::mutex> lock(mutexTWR_);
 
@@ -158,7 +157,9 @@ bool TWR::autoriserDecollage(Avion* avion) {
 
         std::vector<Position> trajMontee;
         Position actuelle = avion->getPosition();
-        trajMontee.push_back(Position(actuelle.getX(), actuelle.getY() + 10000, 5000));
+        
+        // Modification : Montée progressive vers 3000m sur 20km
+        trajMontee.push_back(Position(actuelle.getX(), actuelle.getY() + 20000, 3000));
 
         avion->setTrajectoire(trajMontee);
         avion->setEtat(EtatAvion::DECOLLAGE);

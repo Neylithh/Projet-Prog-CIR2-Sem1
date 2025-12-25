@@ -26,10 +26,12 @@ void APP::assignerTrajectoireApproche(Avion* avion) {
     float px = refPiste.getX();
     float py = refPiste.getY();
 
+    // Modification : Descente par paliers depuis l'altitude de croisière
     std::vector<Position> traj = {
-        Position(px, py + 3000, 2000),
-        Position(px, py + 1000, 1000),
-        Position(px, py + 500, 500)
+        Position(px, py + 20000, 4000), // 20km out, 4000m
+        Position(px, py + 10000, 2000), // 10km out, 2000m
+        Position(px, py + 3000, 1000),  // 3km out, 1000m
+        Position(px, py + 1000, 500)    // Finale
     };
 
     avion->setTrajectoire(traj);

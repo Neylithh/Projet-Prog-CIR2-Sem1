@@ -10,7 +10,9 @@ void CCR::prendreEnCharge(Avion* avion) {
 
     if (avion->getDestination()) {
         std::vector<Position> routeEnRoute;
-        routeEnRoute.push_back(avion->getDestination()->position);
+        // Modification : Altitude de croisière réaliste (10000m)
+        Position dest = avion->getDestination()->position;
+        routeEnRoute.push_back(Position(dest.getX(), dest.getY(), 10000));
         avion->setTrajectoire(routeEnRoute);
     }
     std::cout << "[CCR] CCR prend en charge " << avion->getNom()
@@ -55,10 +57,27 @@ void CCR::gererEspaceAerien() {
                 ss << "Séparation des avions pour éviter une collision : " << a1->getNom() << " - " << a2->getNom();
                 Logger::getInstance().log("CCR", "Collision", ss.str());
 
-                std::cout << "[CCR] Alerte collision : " << a1->getNom() << " / " << a2->getNom() << ". Changement d'altitude pour l'un des avions.\n";
+                std::cout << "[CCR] Alerte collision : " << a1->getNom() << " / " << a2->getNom() << ". Changement d'altitude pour les deux avions.\n";
 
-                Position p = a1->getPosition();
-                a1->setPosition(Position(p.getX(), p.getY(), p.getAltitude() + 500));
+                // Avion 1 : Monte (Position + Trajectoire)
+                Position p1 = a1->getPosition();
+                a1->setPosition(Position(p1.getX(), p1.getY(), p1.getAltitude() + 500));
+                
+                std::vector<Position> traj1 = a1->getTrajectoire();
+                for (auto& pt : traj1) {
+                    pt.setPosition(pt.getX(), pt.getY(), pt.getAltitude() + 500);
+                }
+                a1->setTrajectoire(traj1);
+
+                // Avion 2 : Descend (Position + Trajectoire)
+                Position p2 = a2->getPosition();
+                a2->setPosition(Position(p2.getX(), p2.getY(), p2.getAltitude() - 500));
+
+                std::vector<Position> traj2 = a2->getTrajectoire();
+                for (auto& pt : traj2) {
+                    pt.setPosition(pt.getX(), pt.getY(), pt.getAltitude() - 500);
+                }
+                a2->setTrajectoire(traj2);
             }
         }
     }
