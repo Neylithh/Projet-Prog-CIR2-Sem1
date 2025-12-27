@@ -136,7 +136,7 @@ int main() {
             Position posDepart = depart->position;
             posDepart.setPosition(posDepart.getX(), posDepart.getY() - 5000, 10000);
 
-            Avion* nouvelAvion = new Avion(nom, 4000.f, 5.f, 5000.f, 2.f, 5000.f, posDepart);
+            Avion* nouvelAvion = new Avion(nom, 4000.f, 5.f, 5000.f, 10.f, 5000.f, posDepart);
             nouvelAvion->setDestination(destination);
 
             ccr.prendreEnCharge(nouvelAvion);
@@ -297,7 +297,7 @@ int main() {
 
                 // Info Bulle
                 if (avion == avionSelectionne && hasFont) {
-                    sf::Vector2f tailleBox = { 240.f, 120.f };
+                    sf::Vector2f tailleBox = { 240.f, 140.f };
                     sf::RectangleShape infoBox(tailleBox);
                     infoBox.setFillColor(sf::Color(0, 0, 0, 200));
                     infoBox.setOutlineColor(sf::Color::White);
@@ -331,10 +331,13 @@ int main() {
                     ss << "Vit: " << (int)vitesseAffichee << " km/h\n";
                     if (avion->estEnUrgence()) {
                         if (avion->getTypeUrgence() == TypeUrgence::PANNE_MOTEUR) {
-                            ss << "Urgence de type : Panne moteur";
+                            ss << "Urgence de type : Panne moteur\n";
+                        }
+                        else if (avion->getTypeUrgence() == TypeUrgence::CARBURANT) {
+                            ss << "Urgence de type : Carburant\n";
                         }
                         else {
-                            ss << "Urgence de type : Médicale";
+                            ss << "Urgence de type : Medicale\n";
                         }
                     }
                     std::string etatStr = "INCONNU";

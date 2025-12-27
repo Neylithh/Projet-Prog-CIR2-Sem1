@@ -10,9 +10,33 @@ void CCR::prendreEnCharge(Avion* avion) {
 
     if (avion->getDestination()) {
         std::vector<Position> routeEnRoute;
-        // Modification : Altitude de croisière réaliste (10000m)
+        
+        Position depart = avion->getPosition();
         Position dest = avion->getDestination()->position;
-        routeEnRoute.push_back(Position(dest.getX(), dest.getY(), 10000));
+
+        // Calcul du point de montée (1/3 du trajet)
+        double dx = dest.getX() - depart.getX();
+        double dy = dest.getY() - depart.getY();
+        
+        // Point intermédiaire à 1/3 du chemin, altitude 10000m
+        // L'avion montera progressivement jusqu'à ce point
+        Position pointMontee(
+            depart.getX() + dx * 0.33,
+            depart.getY() + dy * 0.33,
+            10000.0
+        );
+
+        // Point final (destination), altitude 10000m (pour le reste de la croisière)
+        // L'avion restera à 10000m entre le 1/3 et la fin du trajet CCR
+        Position pointCroisiere(
+            dest.getX(),
+            dest.getY(),
+            10000.0
+        );
+
+        routeEnRoute.push_back(pointMontee);
+        routeEnRoute.push_back(pointCroisiere);
+        
         avion->setTrajectoire(routeEnRoute);
     }
     std::cout << "[CCR] CCR prend en charge " << avion->getNom()
@@ -50,9 +74,15 @@ void CCR::gererEspaceAerien() {
             Avion* a1 = avionsEnCroisiere_[i];
             Avion* a2 = avionsEnCroisiere_[j];
 
+            // Modification : Utilisation de >= pour éviter la double correction
+            // Si l'écart est déjà de 1000m (10500 vs 9500), on considère que c'est bon.
+            if (std::abs(a1->getPosition().getAltitude() - a2->getPosition().getAltitude()) >= 1000) {
+                continue;
+            }
+
             double dist = a1->getPosition().distance(a2->getPosition());
 
-            if (dist < 5000.0) {
+            if (dist < 20000.0) {
                 std::stringstream ss;
                 ss << "Séparation des avions pour éviter une collision : " << a1->getNom() << " - " << a2->getNom();
                 Logger::getInstance().log("CCR", "Collision", ss.str());

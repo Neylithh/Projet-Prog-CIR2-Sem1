@@ -100,6 +100,16 @@ void Avion::avancer(float dt) {
 
     if (trajectoire_.empty()) return;
 
+    // Vérification carburant avant mouvement
+    float consommationRequise = conso_ * dt;
+    if (carburant_ < consommationRequise) {
+        carburant_ = 0;
+        etat_ = EtatAvion::TERMINE;
+        std::cout << "[AVION " << nom_ << "] CRASH : Panne sèche en vol ! L'avion a disparu des radars.\n";
+        Logger::getInstance().log("AVION", "CRASH", "Avion " + nom_ + " crashé par manque de carburant.");
+        return;
+    }
+
     Position cible = trajectoire_.front();
     float dx = cible.getX() - pos_.getX();
     float dy = cible.getY() - pos_.getY();
@@ -122,12 +132,12 @@ void Avion::avancer(float dt) {
         );
     }
 
-    carburant_ -= conso_ * dt;
-    if (carburant_ < 0) carburant_ = 0;
+    carburant_ -= consommationRequise;
 
-    if (carburant_ < 500 && typeUrgence_ == TypeUrgence::AUCUNE) {
+    // Seuil d'urgence modifié à 1000
+    if (carburant_ < 1000 && typeUrgence_ == TypeUrgence::AUCUNE) {
         typeUrgence_ = TypeUrgence::CARBURANT;
-        std::cout << "[AVION " << nom_ << "] MAYDAY : Urgence CARBURANT declaree !\n";
+        std::cout << "[AVION " << nom_ << "] MAYDAY : Urgence CARBURANT declaree (< 1000L) !\n";
     }
 }
 
@@ -135,6 +145,18 @@ void Avion::avancerSol(float dt) {
     std::lock_guard<std::mutex> lock(mtx_);
 
     if (trajectoire_.empty()) return;
+
+    // Vérification carburant au sol aussi (même si conso réduite)
+    float consommationSol = conso_ * 0.05f;
+    float consommationRequise = consommationSol * dt;
+
+    if (carburant_ < consommationRequise) {
+        carburant_ = 0;
+        // Au sol, on peut considérer qu'il s'arrête juste, mais pour la simu "crash/terminé" est demandé
+        etat_ = EtatAvion::TERMINE;
+        std::cout << "[AVION " << nom_ << "] Panne sèche au sol ! Moteurs coupés définitivement.\n";
+        return;
+    }
 
     Position cible = trajectoire_.front();
     float dx = cible.getX() - pos_.getX();
@@ -176,11 +198,7 @@ void Avion::avancerSol(float dt) {
         );
     }
 
-    float consommationSol = conso_ * 0.05f;
-    carburant_ -= consommationSol * dt;
-    if (carburant_ < 0) {
-        carburant_ = 0;
-    }
+    carburant_ -= consommationRequise;
 }
 
 void Avion::declarerUrgence(TypeUrgence type) {
@@ -204,12 +222,18 @@ void Avion::declarerUrgence(TypeUrgence type) {
 
 void Avion::effectuerMaintenance() {
     std::lock_guard<std::mutex> lock(mtx_);
-    carburant_ = 5000.0f;
+    
+    // Ajout de 2500 au réservoir existant avec un plafond à 5000
+    carburant_ += 2500.0f;
+    if (carburant_ > 5000.0f) {
+        carburant_ = 5000.0f;
+    }
+    
     if (typeUrgence_ != TypeUrgence::AUCUNE) {
         std::cout << "[AVION " << nom_ << "] Resolution de l'urgence. Avion operationnel.\n";
         typeUrgence_ = TypeUrgence::AUCUNE;
     }
     else {
-        std::cout << "[AVION " << nom_ << "]" << nom_ << " : Remplissage du carburant fini.\n";
+        std::cout << "[AVION " << nom_ << "] " << nom_ << " : Ravitaillement (+2500L). Total: " << carburant_ << "L.\n";
     }
 }

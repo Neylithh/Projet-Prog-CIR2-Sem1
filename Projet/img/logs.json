@@ -25,44 +25,49 @@
     "Details": "Avion [AF-5  Carburant : 5000] pris en charge par la CCR, en destination de Lille"
   },
   {
-    "Controleur": "APP",
-    "Action": "Prise en charge",
-    "Details": "L'avion [AF-3  Carburant : 4868] est pris en charge par l'APP"
-  },
-  {
     "Controleur": "CCR",
-    "Action": "Transfert vers APP",
-    "Details": "Transfert de [AF-3  Carburant : 4868] vers l'APP"
+    "Action": "Collision",
+    "Details": "Séparation des avions pour éviter une collision : AF-3 - AF-4"
   },
   {
     "Controleur": "APP",
     "Action": "Prise en charge",
-    "Details": "L'avion [AF-4  Carburant : 4854] est pris en charge par l'APP"
+    "Details": "L'avion [AF-3  Carburant : 4350] est pris en charge par l'APP"
   },
   {
     "Controleur": "CCR",
     "Action": "Transfert vers APP",
-    "Details": "Transfert de [AF-4  Carburant : 4854] vers l'APP"
+    "Details": "Transfert de [AF-3  Carburant : 4350] vers l'APP"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-4  Carburant : 4320] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-4  Carburant : 4320] vers l'APP"
   },
   {
     "Controleur": "APP",
     "Action": "Autorisation atterrissage",
-    "Details": "Autorisation d'atterrir pour [AF-3  Carburant : 4826]"
+    "Details": "Autorisation d'atterrir pour [AF-3  Carburant : 4130]"
   },
   {
     "Controleur": "TWR",
     "Action": "Parking",
-    "Details": "[AF-3  Carburant : 4824] bloque au bloc Paris-G1"
+    "Details": "[AF-3  Carburant : 4120] bloque au bloc Paris-G1"
   },
   {
     "Controleur": "APP",
     "Action": "Autorisation atterrissage",
-    "Details": "Autorisation d'atterrir pour [AF-4  Carburant : 4820]"
+    "Details": "Autorisation d'atterrir pour [AF-4  Carburant : 4010]"
   },
   {
     "Controleur": "TWR",
     "Action": "Parking",
-    "Details": "[AF-4  Carburant : 4818] bloque au bloc Lille-G1"
+    "Details": "[AF-4  Carburant : 4000] bloque au bloc Lille-G1"
   },
   {
     "Controleur": "CCR",
@@ -70,22 +75,292 @@
     "Details": "Séparation des avions pour éviter une collision : AF-1 - AF-2"
   },
   {
+    "Controleur": "CCR",
+    "Action": "Collision",
+    "Details": "Séparation des avions pour éviter une collision : AF-2 - AF-5"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Collision",
+    "Details": "Séparation des avions pour éviter une collision : AF-2 - AF-5"
+  },
+  {
     "Controleur": "TWR",
     "Action": "Decollage",
-    "Details": "Decollage immediat piste 0 pour [AF-3  Carburant : 4997]"
+    "Details": "Decollage immediat piste 0 pour [AF-3  Carburant : 4990]"
   },
   {
     "Controleur": "CCR",
     "Action": "Prise en charge",
-    "Details": "Avion [AF-3  Carburant : 4993] pris en charge par la CCR, en destination de Marseille"
+    "Details": "Avion [AF-3  Carburant : 4950] pris en charge par la CCR, en destination de Marseille"
   },
   {
     "Controleur": "TWR",
     "Action": "Decollage",
-    "Details": "Decollage immediat piste 93000 pour [AF-4  Carburant : 4997]"
+    "Details": "Decollage immediat piste 93000 pour [AF-4  Carburant : 4990]"
   },
   {
     "Controleur": "CCR",
     "Action": "Prise en charge",
-    "Details": "Avion [AF-4  Carburant : 4993] pris en charge par la CCR, en destination de Paris"
+    "Details": "Avion [AF-4  Carburant : 4950] pris en charge par la CCR, en destination de Marseille"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-1  Carburant : 2260] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-1  Carburant : 2260] vers l'APP"
+  },
+  {
+    "Controleur": "AVION",
+    "Action": "URGENCE",
+    "Details": "Urgence déclarée : MEDICALE (Passager) - Position (112422, 269268, Alt:9689)"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-2  Carburant : 2290] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-2  Carburant : 2290] vers l'APP"
+  },
+  {
+    "Controleur": "AVION",
+    "Action": "URGENCE",
+    "Details": "Urgence déclarée : MEDICALE (Passager) - Position (418333, -732180, Alt:7889)"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Autorisation atterrissage",
+    "Details": "Autorisation d'atterrir pour [AF-1  Carburant : 1950]"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Autorisation atterrissage",
+    "Details": "Autorisation d'atterrir pour [AF-2  Carburant : 2080]"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Parking",
+    "Details": "[AF-1  Carburant : 1940] bloque au bloc Lille-G1"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Parking",
+    "Details": "[AF-2  Carburant : 2070] bloque au bloc Marseille-G1"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-5  Carburant : 2260] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-5  Carburant : 2260] vers l'APP"
+  },
+  {
+    "Controleur": "AVION",
+    "Action": "URGENCE",
+    "Details": "Urgence déclarée : MEDICALE (Passager) - Position (112420, 269279, Alt:8375)"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Autorisation atterrissage",
+    "Details": "Autorisation d'atterrir pour [AF-5  Carburant : 1950]"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Parking",
+    "Details": "[AF-5  Carburant : 1940] bloque au bloc Lille-G2"
+  },
+  {
+    "Controleur": "MAINTENANCE",
+    "Action": "Evacuation",
+    "Details": "Passager malade debarque de AF-1"
+  },
+  {
+    "Controleur": "MAINTENANCE",
+    "Action": "Evacuation",
+    "Details": "Passager malade debarque de AF-2"
+  },
+  {
+    "Controleur": "AVION",
+    "Action": "URGENCE",
+    "Details": "Urgence déclarée : MEDICALE (Passager) - Position (357156, -646258, Alt:10000)"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert d'urgence vers APP",
+    "Details": "Transfert prioritaire (urgence) de [AF-3  Carburant : 3060] vers APP"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-3  Carburant : 3060] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-3  Carburant : 3060] vers l'APP"
+  },
+  {
+    "Controleur": "AVION",
+    "Action": "URGENCE",
+    "Details": "Urgence déclarée : MEDICALE (Passager) - Position (295537, -329391, Alt:10000)"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert d'urgence vers APP",
+    "Details": "Transfert prioritaire (urgence) de [AF-4  Carburant : 3180] vers APP"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-4  Carburant : 3180] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-4  Carburant : 3180] vers l'APP"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Decollage",
+    "Details": "Decollage immediat piste 93000 pour [AF-1  Carburant : 4420]"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-1  Carburant : 4380] pris en charge par la CCR, en destination de Paris"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Autorisation atterrissage",
+    "Details": "Autorisation d'atterrir pour [AF-3  Carburant : 2650]"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Parking",
+    "Details": "[AF-3  Carburant : 2640] bloque au bloc Marseille-G1"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Decollage",
+    "Details": "Decollage immediat piste 432000 pour [AF-2  Carburant : 4550]"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-2  Carburant : 4510] pris en charge par la CCR, en destination de Paris"
+  },
+  {
+    "Controleur": "MAINTENANCE",
+    "Action": "Evacuation",
+    "Details": "Passager malade debarque de AF-5"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-1  Carburant : 3670] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-1  Carburant : 3670] vers l'APP"
+  },
+  {
+    "Controleur": "MAINTENANCE",
+    "Action": "Evacuation",
+    "Details": "Passager malade debarque de AF-3"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Autorisation atterrissage",
+    "Details": "Autorisation d'atterrir pour [AF-1  Carburant : 3460]"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Parking",
+    "Details": "[AF-1  Carburant : 3450] bloque au bloc Paris-G1"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Autorisation atterrissage",
+    "Details": "Autorisation d'atterrir pour [AF-4  Carburant : 1980]"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Parking",
+    "Details": "[AF-4  Carburant : 1970] bloque au bloc Marseille-G2"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Decollage",
+    "Details": "Decollage immediat piste 93000 pour [AF-5  Carburant : 4380]"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-5  Carburant : 4340] pris en charge par la CCR, en destination de Paris"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Decollage",
+    "Details": "Decollage immediat piste 432000 pour [AF-3  Carburant : 4990]"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-3  Carburant : 4950] pris en charge par la CCR, en destination de Paris"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Decollage",
+    "Details": "Decollage immediat piste 0 pour [AF-1  Carburant : 4990]"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Prise en charge",
+    "Details": "Avion [AF-1  Carburant : 4950] pris en charge par la CCR, en destination de Marseille"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-5  Carburant : 3630] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-5  Carburant : 3630] vers l'APP"
+  },
+  {
+    "Controleur": "MAINTENANCE",
+    "Action": "Evacuation",
+    "Details": "Passager malade debarque de AF-4"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Prise en charge",
+    "Details": "L'avion [AF-2  Carburant : 2500] est pris en charge par l'APP"
+  },
+  {
+    "Controleur": "CCR",
+    "Action": "Transfert vers APP",
+    "Details": "Transfert de [AF-2  Carburant : 2500] vers l'APP"
+  },
+  {
+    "Controleur": "APP",
+    "Action": "Autorisation atterrissage",
+    "Details": "Autorisation d'atterrir pour [AF-5  Carburant : 3420]"
+  },
+  {
+    "Controleur": "TWR",
+    "Action": "Parking",
+    "Details": "[AF-5  Carburant : 3410] bloque au bloc Paris-G1"
   }

@@ -2,7 +2,9 @@
 #include <iostream>
 #include <chrono>
 #include <random>
-#define PROBA_URGENCE 1000
+// Modification : Valeur abaissée à 400 pour garantir des urgences fréquentes (~30s)
+// Avec une boucle de 75ms, cela fait environ 1 chance sur 400 toutes les 0.075s par avion en vol.
+#define PROBA_URGENCE 650
 
 void simuler_pause(int ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
@@ -11,7 +13,9 @@ void simuler_pause(int ms) {
 void routine_ccr(CCR& ccr) {
     while (true) {
         ccr.gererEspaceAerien();
-        simuler_pause(500);
+        // Modification : Vérification beaucoup plus fréquente (50ms au lieu de 500ms)
+        // pour ne pas rater les croisements à haute vitesse.
+        simuler_pause(50); 
     }
 }
 
